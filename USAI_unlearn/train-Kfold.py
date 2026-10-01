@@ -22,6 +22,7 @@ from data_loader import Data_generator
 from tensorflow.keras.models import load_model
 from utils import colorstr
 import argparse
+import random
 
 
 
@@ -88,8 +89,18 @@ def main():
     #my_parser.add_argument('--checkpointerName', type=str ,default="checkpointer")
     my_parser.add_argument('--epochendName', type=str ,default="on_epoch_end")
     my_parser.add_argument('--FmodelsName', type=str ,default="models")
+    my_parser.add_argument('--seed', type=int, default=None, help='X2 repeated runs: [1, 2, 3] ; default None = old behaviour (no seed, old output path)')
+    my_parser.add_argument('--tag', type=str, default="", help='Control runs: [C1_computematched, C2_sameimg] ; saved in {set}_{tag} folder')
     
     args = my_parser.parse_args()
+
+    ## set seed (X2 repeated runs)
+    if args.seed is not None:
+        os.environ['PYTHONHASHSEED'] = str(args.seed)
+        random.seed(args.seed)
+        np.random.seed(args.seed)
+        tf.random.set_seed(args.seed)
+        print(colorstr('yellow', f'[INFO]: Set random seed = {args.seed}'))
     
     ## set gpu
     gpu = args.gpu
@@ -119,17 +130,22 @@ def main():
     valframe = dataframe[dataframe["fold"]==args.fold].reset_index(drop=True)
     ### Implement > ## Train and validation sets  
     train_generator, valid_generator = Data_generator(height=IMAGE_SIZE, width=IMAGE_SIZE, BATCH_SIZE=args.batchsize, 
-                                                          dataframe=trainframe, valframe=valframe)
+                                                          dataframe=trainframe, valframe=valframe, seed=args.seed)
     
     ## Create Main Output Path
     _R = f"R{args.R}"
+    ## Control / repeated runs are saved in separate folders so existing results are not overwritten
+    set_dir = f'{args.set}_{args.tag}' if args.tag else args.set
+    run_tag = (f'_{args.tag}' if args.tag else '') + (f'_seed{args.seed}' if args.seed is not None else '')
     if args.set == "MLunlearn_USAI":
         if args.R == 1:
-            root_base = f'{args.save_dir}/{args.network_name}Model/{args.set}/run_Kfold/{_R}_{args.data}/{args.name}_exp_{args.exp}/fold{args.fold}'
+            root_base = f'{args.save_dir}/{args.network_name}Model/{set_dir}/run_Kfold/{_R}_{args.data}/{args.name}_exp_{args.exp}/fold{args.fold}'
         elif args.R == 2:
-            root_base = f'{args.save_dir}/{args.network_name}Model/{args.set}/run_Kfold/{_R}_{args.data}/{args.name}/exp_{args.exp}/fold{args.fold}'
+            root_base = f'{args.save_dir}/{args.network_name}Model/{set_dir}/run_Kfold/{_R}_{args.data}/{args.name}/exp_{args.exp}/fold{args.fold}'
     elif args.set == "MLorigin_USAI":
-        root_base = f'{args.save_dir}/{args.network_name}Model/{args.set}/weight_{args.weight}/{_R}_{args.data}/{args.name}'    
+        root_base = f'{args.save_dir}/{args.network_name}Model/{set_dir}/weight_{args.weight}/{_R}_{args.data}/{args.name}'    
+    if args.seed is not None:
+        root_base = f'{root_base}/seed{args.seed}'
     os.makedirs(root_base, exist_ok=True)
     ## Set mkdir TensorBoard 
     root_logdir = f"{root_base}/{args.tensorName}"
@@ -143,13 +159,13 @@ def main():
     os.makedirs(modelNamemkdir, exist_ok=True)
     ## Set Model Name 
     if args.set == "MLunlearn_USAI":
-        modelName = f'model{args.network_name}_{args.set}_{args.name}_exp_{args.exp}-{_R}_{args.data}_fold{args.fold}.h5'
+        modelName = f'model{args.network_name}_{args.set}_{args.name}_exp_{args.exp}-{_R}_{args.data}_fold{args.fold}{run_tag}.h5'
         ## Set check point Name
-        on_epochName = f'model{args.network_name}_{args.set}_{args.name}_exp_{args.exp}-{_R}_{args.data}_fold{args.fold}'
+        on_epochName = f'model{args.network_name}_{args.set}_{args.name}_exp_{args.exp}-{_R}_{args.data}_fold{args.fold}{run_tag}'
     elif args.set == "MLorigin_USAI":
-        modelName = f'model{args.network_name}_{args.set}_{args.name}-{_R}_{args.data}.h5'
+        modelName = f'model{args.network_name}_{args.set}_{args.name}-{_R}_{args.data}{run_tag}.h5'
         ## Set check point Name
-        on_epochName = f'model{args.network_name}_{args.set}_{args.name}-{_R}_{args.data}'
+        on_epochName = f'model{args.network_name}_{args.set}_{args.name}-{_R}_{args.data}{run_tag}'
     ## Create save epoch end folder 
     Model2save = f'{modelNamemkdir}/{modelName}'
     root_Metrics = f'{root_base}/{args.epochendName}/'

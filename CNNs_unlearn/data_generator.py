@@ -87,7 +87,30 @@ def Flip_generator(batch_generator_main, batch_generator_2, IMAGE_SIZE):
                 batch_Flip[i] = batch_x[i] 
                 batch_main[i] = batch_x_main[i] 
                 batch_label[i] = batch_y[i]
-    
+
         yield ([batch_main, batch_Flip], batch_label)
+
+
+## Function ⚙️ Aug: SameDiff_generator with Label (all Batch) -- Control C2 (unrelated auxiliary task)
+def SameDiff_generator(batch_generator_main, batch_generator_2, IMAGE_SIZE, seed=32):
+    """Control C2: same pairs, same labels (cls), same augmentation as Flip_generator,
+    but NO flip at all. label 1 (TRUE)  -> second image = same image (augmented)
+                        label 0 (FALSE) -> second image = a different image from the same batch
+    """
+    rng = np.random.default_rng(seed)
+    prev_x = None
+    while True:
+        batch_x, batch_y = next(batch_generator_2)
+        batch_x_main = next(batch_generator_main)
+        n = batch_x.shape[0]
+        ## pick a different image: roll the batch by a random non-zero shift (never pairs an image with itself)
+        if n > 1:
+            batch_other = np.roll(batch_x, shift=int(rng.integers(1, n)), axis=0)
+        else:
+            batch_other = prev_x[:1]
+        batch_pair = np.where(batch_y.reshape(-1, 1, 1, 1) == 0.0, batch_other, batch_x)
+        prev_x = batch_x
+
+        yield ([batch_x_main, batch_pair], batch_y)
 
 

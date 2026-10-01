@@ -17,7 +17,7 @@ from tensorflow.keras.optimizers import Adam
 from EffNetmodel import build_modelB5_unlearn, loadresumemodel, model_block4Unfreze, model_block4TOblock7Unfreze, model_block1TOblock4Unfreze
 from EffNetmodel import model_block5a_se_excite_Unfreze, build_modelB5_unlearn
 from ResNet152v2model import build_ResNet152v2_unlearn, resumeMOdelResNet152v2, ResNet152v2Unfreeze_conv3_block, ResNet152v2Unfreeze_conv3_blockTOconv5_block, ResNet152v2Unfreeze_conv1xTOconv3_block
-from data_generator import batch_datagen, Flip_generator
+from data_generator import batch_datagen, Flip_generator, SameDiff_generator
 from utils import colorstr
 #load Check point
 from tensorflow.keras.models import load_model
@@ -101,6 +101,7 @@ def main():
     #my_parser.add_argument('--checkpointerName', type=str ,default="checkpointer")
     my_parser.add_argument('--epochendName', type=str ,default="on_epoch_end")
     my_parser.add_argument('--FmodelsName', type=str ,default="models")
+    my_parser.add_argument('--task', type=str, default='flip', choices=['flip', 'sameimg'], help='[flip: ML unlearn flip task (original), sameimg: Control C2 same-image vs different-image, no flip]')
     
     args = my_parser.parse_args()
 
@@ -166,14 +167,22 @@ def main():
     val_df = dataset[dataset['subset']=='val'].reset_index(drop=True)
     ### Implement > ## Train set  
     batch_generator_main, batch_generator_2 = batch_datagen(Train_df, input_shape, BATCH_SIZE=args.batchsize)
-    batch_train = Flip_generator(batch_generator_main, batch_generator_2, IMAGE_SIZE=IMAGE_SIZE)
     ## Validation set 
     batchval_generator_main, batchval_generator_2 = batch_datagen(val_df, input_shape, BATCH_SIZE=args.batchsize)
-    batch_val = Flip_generator(batchval_generator_main, batchval_generator_2, IMAGE_SIZE=IMAGE_SIZE)
+    if args.task == 'sameimg':
+        print(colorstr('yellow', '[INFO]: Control C2 ==> same-image vs different-image task (no flip)'))
+        batch_train = SameDiff_generator(batch_generator_main, batch_generator_2, IMAGE_SIZE=IMAGE_SIZE, seed=32)
+        batch_val = SameDiff_generator(batchval_generator_main, batchval_generator_2, IMAGE_SIZE=IMAGE_SIZE, seed=33)
+    else:
+        batch_train = Flip_generator(batch_generator_main, batch_generator_2, IMAGE_SIZE=IMAGE_SIZE)
+        batch_val = Flip_generator(batchval_generator_main, batchval_generator_2, IMAGE_SIZE=IMAGE_SIZE)
 
     ## Create Main Output Path
     _R = f"R{args.R}"
-    root_base = f'{args.save_dir}/{args.network_name}Model/{args.set}/weight_{args.weight}/{_R}/{args.name}'
+    ## Control C2 is saved in a separate folder, e.g. baseML_unlearn_sameimg
+    set_dir = args.set if args.task == 'flip' else f'{args.set}_{args.task}'
+    task_tag = '' if args.task == 'flip' else f'_{args.task}'
+    root_base = f'{args.save_dir}/{args.network_name}Model/{set_dir}/weight_{args.weight}/{_R}/{args.name}'
     os.makedirs(root_base, exist_ok=True)
     ## Set mkdir TensorBoard 
     root_logdir = f"{root_base}/{args.tensorName}"
@@ -183,9 +192,9 @@ def main():
     #tensorboard_cb = callbacks.TensorBoard(log_dir=run_logdir)
     tensorboard_cb = TensorBoard(log_dir=run_logdir, write_graph=False)
     ## Create Models Name 
-    modelName = f'model{args.network_name}_Unlearning_miniImageNet_{args.name}-{_R}.h5'
+    modelName = f'model{args.network_name}_Unlearning_miniImageNet{task_tag}_{args.name}-{_R}.h5'
     # modelName = f'model{args.network_name}_Unlearning_miniImageNet_{args.name}-{_R}'
-    on_epochName = f'model{args.network_name}_Unlearning_miniImageNet_{args.name}-{_R}'
+    on_epochName = f'model{args.network_name}_Unlearning_miniImageNet{task_tag}_{args.name}-{_R}'
     ## Create Model Folder 
     modelNamemkdir = f"{root_base}/{args.FmodelsName}"
     os.makedirs(modelNamemkdir, exist_ok=True)

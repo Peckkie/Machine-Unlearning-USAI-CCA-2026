@@ -14,7 +14,7 @@ from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
-def Data_generator(height, width, BATCH_SIZE, dataframe, valframe):
+def Data_generator(height, width, BATCH_SIZE, dataframe, valframe, seed=None):
     
     train_datagen = ImageDataGenerator(
           rescale=1./255,
@@ -37,7 +37,8 @@ def Data_generator(height, width, BATCH_SIZE, dataframe, valframe):
         target_size = (height, width),
         batch_size=BATCH_SIZE,
         color_mode= 'rgb',
-        class_mode='categorical')
+        class_mode='categorical',
+        seed=seed)
 
     val_generator = valid_datagen.flow_from_dataframe(
         dataframe = valframe,
