@@ -35,8 +35,13 @@ source_conda() {
 activate_env() {
     require_vars CONDA_ENV
     source_conda
-    if [[ $CONDA_ENV == /* ]]; then conda activate "$CONDA_ENV"; else conda activate "$CONDA_ENV"; fi \
-        || die "conda activate $CONDA_ENV ไม่ได้"
+    # conda activate scripts (e.g. AI env: env_vars.sh uses $LD_LIBRARY_PATH) break under `set -u`
+    local had_u=0; [[ $- == *u* ]] && had_u=1
+    set +u
+    export LD_LIBRARY_PATH=${LD_LIBRARY_PATH:-}
+    conda activate "$CONDA_ENV" || die "conda activate $CONDA_ENV ไม่ได้"
+    [[ $had_u == 1 ]] && set -u
+    return 0
 }
 
 # run_logged NAME cmd... : print the command, run it, keep a log in $LOG_DIR/NAME.log
