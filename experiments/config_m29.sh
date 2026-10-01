@@ -15,8 +15,10 @@ SAVE_DIR=/media/tohn/HDD2/Model_unlearn_2026   # โฟลเดอร์ให�
 ## ---------- datasets ----------
 # folder ที่มี Traindf_fold4_8_v1.csv และ Valdf_fold3_v1.csv (split เดียวกับผลใน paper)
 USAI_DATA_DIR=/media/tohn/HDD/VISION_dataset
+# path ใน Excel เป็นของเครื่อง 28 (/media/HDD/...) — บนเครื่อง 29 อยู่ที่ /media/tohn/HDD2/...
 # mini-ImageNet pair CSV (columns: img_path, cls, subset) — img_path ต้องชี้ไปที่ภาพบนเครื่อง 29
 MINI_CSV=/home/kannika/code/mini-ImageNet_MachineUnlearn.csv   # CSV ที่แปลง path ภาพสำหรับเครื่อง 29 แล้ว (Code_Change_path_dataset_miniImageNet_..._for_Train29.ipynb)
+MINI_PATH_REPLACE=""                      # ถ้า img_path ใน CSV ยังเป็นของเครื่อง 28 ใส่ "/media/HDD=/media/tohn/HDD2" (check_setup.sh จะบอก)
 
 ## ---------- test sets (ชุดเดียวกับ Table 3/4) ----------
 LAB_TEST_CSV=/media/tohn/HDD/VISION_dataset/Testdf_fold1_2_v1.csv                      # Lab Testset1312
@@ -29,8 +31,11 @@ PAPER_ORIGINAL_H5=/media/tohn/SSD/ModelTrainByImages/R2_1/models/B5R2_block5_15A
 # โมเดล unlearn บน mini-ImageNet: R2 unfreeze block4-block7 -> จุดเริ่มของ "unlearned" seed 2, 3
 # Excel: ใช้ checkpoint epoch 50 (mini-ImageNet acc 0.91) ซึ่งอยู่เครื่อง 28:
 #   /media/HDD/mini-ImageNet/EffNetB5Model_unlearn/R2/unfreezeB4-B7/on_epoch_end/modelEffNetB5_Unlearning_unfreezeB4-B7_R2_epoch50.h5
-# ต้อง copy มาเครื่อง 29 แล้วใส่ path ที่นี่
-UNLEARN_B4B7_CKPT=__SET_ME__
+#   -> เครื่อง 29 (/media/HDD -> /media/tohn/HDD2):
+UNLEARN_B4B7_CKPT=/media/tohn/HDD2/mini-ImageNet/EffNetB5Model_unlearn/R2/unfreezeB4-B7/on_epoch_end/modelEffNetB5_Unlearning_unfreezeB4-B7_R2_epoch50.h5
+# TensorBoard log ของ unlearn (ใช้กับ compute_budget.py)
+TB_UNLEARN_R1=/media/tohn/HDD2/mini-ImageNet/EffNetB5Model_unlearn/R1/Mylogs_tensor
+TB_UNLEARN_R2=/media/tohn/HDD2/mini-ImageNet/EffNetB5Model_unlearn/R2/unfreezeB4-B7/Mylogs_tensor
 
 ## ---------- training settings (ต้องเท่ากับผลเดิม) ----------
 BATCH_SIZE=8                              # downstream: train.py default (README เดิมไม่เคยใส่ --batchsize)

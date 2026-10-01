@@ -25,6 +25,7 @@
 | `CNNs_unlearn/trainmodel.py` | `--task [flip, sameimg]` → `sameimg` เซฟใน `baseML_unlearn_sameimg/` |
 | `USAI_unlearn/train.py`, `train-Kfold.py` | `--seed` (ตั้ง seed python/numpy/tf + data generator) และ `--tag` (เซฟใน `{set}_{tag}/`) |
 | `experiments/config_m29.sh` | path / ค่าทั้งหมดของเครื่อง 29 (แก้ไฟล์นี้ไฟล์เดียว) |
+| `experiments/check_setup.sh` | ตรวจ path / ภาพ / env / GPU ก่อนเทรน |
 | `experiments/run_C2_pretrain.sh`, `run_downstream.sh` | script รันพร้อมเช็ค path + log |
 | `experiments/evaluate.py`, `run_eval.sh` | evaluate lab (1312) + field (807) แบบเดียวกับ notebook ใน paper → `results_seeds.csv` |
 | `USAI_unlearn/EffNetmodels.py` | `--effnet_impl efn` แก้ bug original baseline (ดูด้านล่าง) |
@@ -86,6 +87,14 @@ git pull
 nano experiments/config_m29.sh      # ใส่ค่าทุกช่องที่เป็น __SET_ME__
 ```
 
+ตรวจทุกอย่างก่อน (ไม่เทรน): path ทุกตัว, ภาพใน CSV มีจริงไหม, conda env, GPU
+
+```bash
+bash experiments/check_setup.sh
+```
+
+ทุกบรรทัดควรเป็น `[OK]` — ถ้า mini-ImageNet ขึ้น MISS เพราะ path ภาพยังเป็นของเครื่อง 28 ให้ตั้ง `MINI_PATH_REPLACE="/media/HDD=/media/tohn/HDD2"`
+
 script เช็คค่าและ path ทุกตัวก่อนเทรน ถ้ายังไม่ได้ใส่หรือ path ไม่มีจริง จะหยุดทันทีพร้อมบอกว่าขาดอะไร
 log ทุก run อยู่ที่ `$SAVE_DIR/logs/`
 
@@ -135,7 +144,7 @@ for s in 2 3; do bash experiments/run_eval.sh unlearned $s 0; done
 
 ```bash
 python3 experiments/compute_budget.py --unlearn_epochs 200 50 --n_usai_train <จำนวนแถวใน Traindf_fold4_8_v1.csv> \
-    --tb_unlearn <Mylogs_tensor ของ unlearn R1> <Mylogs_tensor ของ unlearn R2 unfreezeB4-B7> \
+    --tb_unlearn $TB_UNLEARN_R1 $TB_UNLEARN_R2 \
     --tb_downstream <Mylogs_tensor ของ original R2 seed 1 ที่เพิ่งเทรน>
 ```
 

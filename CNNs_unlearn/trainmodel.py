@@ -101,6 +101,7 @@ def main():
     #my_parser.add_argument('--checkpointerName', type=str ,default="checkpointer")
     my_parser.add_argument('--epochendName', type=str ,default="on_epoch_end")
     my_parser.add_argument('--FmodelsName', type=str ,default="models")
+    my_parser.add_argument('--path_replace', type=str, default="", help='rewrite img_path prefix for another machine, "OLD=NEW" e.g. "/media/HDD=/media/tohn/HDD2"')
     my_parser.add_argument('--task', type=str, default='flip', choices=['flip', 'sameimg'], help='[flip: ML unlearn flip task (original), sameimg: Control C2 same-image vs different-image, no flip]')
     
     args = my_parser.parse_args()
@@ -163,6 +164,10 @@ def main():
 
     ## Create Data Training Loader
     dataset = pd.read_csv(args.data_path, dtype=str)
+    if args.path_replace:
+        old, new = args.path_replace.split('=', 1)
+        dataset['img_path'] = dataset['img_path'].str.replace(old, new, n=1, regex=False)
+        print(colorstr('yellow', f'[INFO]: img_path prefix {old} -> {new}'))
     Train_df = dataset[dataset['subset']=='train'].reset_index(drop=True)        
     val_df = dataset[dataset['subset']=='val'].reset_index(drop=True)
     ### Implement > ## Train set  
