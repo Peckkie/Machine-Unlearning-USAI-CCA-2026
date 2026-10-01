@@ -7,9 +7,9 @@ Two ways to match (report both in the paper, use one to set --epochs):
 
 Example
   # [A] only
-  python3 compute_budget.py --unlearn_epochs 200 200 --n_usai_train 12000
+  python3 compute_budget.py --unlearn_epochs 200 50 --n_usai_train 12000
   # [A] + [B]  (Mylogs_tensor folders of unlearn R1, unlearn R2, and the downstream R2 run)
-  python3 compute_budget.py --unlearn_epochs 200 200 --n_usai_train 12000 \
+  python3 compute_budget.py --unlearn_epochs 200 50 --n_usai_train 12000 \
       --tb_unlearn /path/R1/transfer/Mylogs_tensor /path/R2/unfreezeB5a_se_excite/Mylogs_tensor \
       --tb_downstream /path/MLorigin_USAI/.../unfreezeBlock5a_se_excite/Mylogs_tensor
 """
@@ -40,7 +40,7 @@ def tb_wall_time(logdir):
 def main():
     p = argparse.ArgumentParser()
     p.add_argument('--n_mini_train', type=int, default=42000, help='mini-ImageNet unlearn train pairs (CSV subset=train)')
-    p.add_argument('--unlearn_epochs', type=int, nargs='+', required=True, help='epochs of each unlearn stage, e.g. R1 R2')
+    p.add_argument('--unlearn_epochs', type=int, nargs='+', required=True, help='epochs used of each unlearn stage, e.g. 200 50 (R1, R2 checkpoint epoch)')
     p.add_argument('--n_usai_train', type=int, required=True, help='USAI train images of the fold (train-Kfold.py trainframe)')
     p.add_argument('--downstream_epochs', type=int, default=200, help='epochs of the normal downstream R2 run')
     p.add_argument('--tb_unlearn', nargs='*', default=[], help='Mylogs_tensor folders of each unlearn stage')
@@ -55,11 +55,14 @@ def main():
     print(f'    C1 --epochs (R2)                 : {args.downstream_epochs} + {extra_a} = {args.downstream_epochs + extra_a}')
 
     if args.tb_unlearn and args.tb_downstream:
+        if len(args.tb_unlearn) != len(args.unlearn_epochs):
+            p.error('--tb_unlearn ต้องมีจำนวนเท่ากับ --unlearn_epochs (1 log ต่อ 1 stage)')
         un_sec = 0.0
-        for d in args.tb_unlearn:
+        for d, used in zip(args.tb_unlearn, args.unlearn_epochs):
             s, e = tb_wall_time(d)
-            print(f'    unlearn  {e:4d} epochs  {s / 3600:7.2f} h  <- {d}')
-            un_sec += s
+            stage_sec = s / e * used  # time/epoch from the log x epochs actually used (e.g. checkpoint epoch 50 of 115)
+            print(f'    unlearn  {e:4d} epochs logged, {used:4d} used  {stage_sec / 3600:7.2f} h  <- {d}')
+            un_sec += stage_sec
         ds_sec, ds_ep = tb_wall_time(args.tb_downstream)
         sec_per_epoch = ds_sec / ds_ep
         extra_b = math.ceil(un_sec / sec_per_epoch)

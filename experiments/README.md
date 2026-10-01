@@ -44,7 +44,7 @@
 | downstream script | `USAI_unlearn/train.py` (split คงที่: `Traindf_fold4_8_v1.csv` + `Valdf_fold3_v1.csv`) — **ไม่ใช่** `train-Kfold.py` | sheet `EffNet-USAI_unlearn`, `USAI_EffNet(newData)` |
 | downstream epochs | R1 = 200, R2 = 200 | Excel |
 | unlearn R1 (FC) | 150+10+9+13+18 = **200 epochs** (resume 4 ครั้ง) | sheet `EffNet-ImageNet_unlearn` |
-| unlearn R2 unfreezeB4-B7 | **115/200** (ไม่มีแถว resume) ⚠️ ต้องเช็คว่าเทรนจบที่ 115 จริงไหม | sheet `EffNet-ImageNet_unlearn` |
+| unlearn R2 unfreezeB4-B7 | เทรน 115/200 แต่ใช้ **checkpoint epoch 50** (mini-ImageNet acc 0.91), lr **1e-6** | sheet `EffNet-ImageNet_unlearn` (Model Epoch) |
 | GPU-hours | ดูจาก TensorBoard log ในตาราง Excel (เครื่อง 28) | — |
 
 ### ⚠️ จุดที่ paper กับโค้ดไม่ตรงกัน (ต้องยืนยันก่อนรัน / ก่อนแก้ paper)
@@ -52,7 +52,7 @@
 1. **split mini-ImageNet** — paper/supplementary: 90/10 = 54,000 / 6,000 pairs; CSV ในโค้ด: train 42,000 / val 12,000 / test 6,000 (70/20/10)
 2. **input resolution** — supplementary: 300×300; โค้ด EffNet-B5: 456×456
 3. **TRUE pair** — supplementary บอก "both images drawn from the same class"; โค้ด (`Flip_generator`) ใช้ **ภาพเดียวกัน** augment ต่างกัน
-4. **batch size** — `train.py` default 8, สคริปต์ baseline เก่า 16/32 → ต้องใช้ค่าเดียวกับที่ได้ผลใน paper
+4. **batch size** — downstream `train.py` = 8, unlearn `trainmodel.py` = 16 (default ทั้งคู่; paper ไม่ได้ระบุ)
 5. **seed** — paper เขียนว่า "controlled using a predefined random seed" แต่โค้ดเดิมไม่มีการตั้ง seed
 
 ### ⚠️ Bug ใน original baseline ของ `train.py` (แก้แล้ว)
@@ -134,7 +134,7 @@ for s in 2 3; do bash experiments/run_eval.sh unlearned $s 0; done
 ### 5. หา `E_C1` สำหรับ C1
 
 ```bash
-python3 experiments/compute_budget.py --unlearn_epochs 200 115 --n_usai_train <จำนวนแถวใน Traindf_fold4_8_v1.csv> \
+python3 experiments/compute_budget.py --unlearn_epochs 200 50 --n_usai_train <จำนวนแถวใน Traindf_fold4_8_v1.csv> \
     --tb_unlearn <Mylogs_tensor ของ unlearn R1> <Mylogs_tensor ของ unlearn R2 unfreezeB4-B7> \
     --tb_downstream <Mylogs_tensor ของ original R2 seed 1 ที่เพิ่งเทรน>
 ```

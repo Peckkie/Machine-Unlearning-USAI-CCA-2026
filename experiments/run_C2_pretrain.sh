@@ -20,14 +20,14 @@ R1_CKPT=$BASE/R1/transfer/models/modelEffNetB5_Unlearning_miniImageNet_sameimg_t
 if [[ $STAGE == all || $STAGE == r1 ]]; then
     run_logged C2_pretrain_R1 python3 trainmodel.py --gpu "$GPU" --network_name EffNetB5 --weight imagenet \
         --set baseML_unlearn --task sameimg --data_path "$MINI_CSV" --save_dir "$SAVE_DIR" \
-        --name transfer --R 1 --epochs "$E_UN_R1"
+        --name transfer --R 1 --epochs "$E_UN_R1" --lr "$LR_UN_R1" --batchsize "$BATCH_SIZE_UN"
 fi
 
 if [[ $STAGE == all || $STAGE == r2 ]]; then
     require_paths R1_CKPT
     run_logged C2_pretrain_R2 python3 trainmodel.py --gpu "$GPU" --network_name EffNetB5 --weight imagenet \
         --set baseML_unlearn --task sameimg --data_path "$MINI_CSV" --save_dir "$SAVE_DIR" \
-        --name unfreezeB4-B7 --R 2 --epochs "$E_UN_R2" --checkpoint_dir "$R1_CKPT"
+        --name unfreezeB4-B7 --R 2 --epochs "$E_UN_R2" --lr "$LR_UN_R2" --batchsize "$BATCH_SIZE_UN" --checkpoint_dir "$R1_CKPT"
 fi
 
 info "C2 pre-train model: $BASE/R2/unfreezeB4-B7/models/modelEffNetB5_Unlearning_miniImageNet_sameimg_unfreezeB4-B7-R2.h5"
