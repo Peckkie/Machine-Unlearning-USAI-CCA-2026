@@ -21,11 +21,22 @@ require_paths() {
     done
 }
 
+# conda.sh: from PATH, or the usual install folders (non-interactive ssh does not load conda)
+source_conda() {
+    local base
+    base=$(conda info --base 2>/dev/null)
+    for b in "$base" ~/miniconda3 ~/anaconda3 /opt/conda; do
+        # shellcheck disable=SC1090,SC1091
+        [[ -n $b && -f $b/etc/profile.d/conda.sh ]] && { source "$b/etc/profile.d/conda.sh"; return 0; }
+    done
+    die "หา conda ไม่เจอ"
+}
+
 activate_env() {
     require_vars CONDA_ENV
-    # shellcheck disable=SC1091
-    source "$(conda info --base)/etc/profile.d/conda.sh"
-    conda activate "$CONDA_ENV"
+    source_conda
+    if [[ $CONDA_ENV == /* ]]; then conda activate "$CONDA_ENV"; else conda activate "$CONDA_ENV"; fi \
+        || die "conda activate $CONDA_ENV ไม่ได้"
 }
 
 # run_logged NAME cmd... : print the command, run it, keep a log in $LOG_DIR/NAME.log

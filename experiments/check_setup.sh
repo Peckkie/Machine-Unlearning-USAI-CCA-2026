@@ -18,9 +18,9 @@ done
 
 echo "== conda env: ${CONDA_ENV} =="
 if [[ "$CONDA_ENV" == *__SET_ME__* ]]; then
-    bad "CONDA_ENV ยังไม่ได้ตั้งค่า — env ที่มี:"; conda env list 2>/dev/null | sed 's/^/         /'
+    bad "CONDA_ENV ยังไม่ได้ตั้งค่า — รัน bash experiments/probe_envs.sh เพื่อหา env ที่ใช้ได้"
 else
-    source "$(conda info --base)/etc/profile.d/conda.sh" && conda activate "$CONDA_ENV" || bad "activate $CONDA_ENV ไม่ได้"
+    source_conda; conda activate "$CONDA_ENV" || bad "activate $CONDA_ENV ไม่ได้"
     for m in tensorflow efficientnet.tfkeras skimage keras.utils.generic_utils pandas sklearn scipy; do
         python3 -c "import $m" 2>/dev/null && ok "import $m" || bad "import $m"
     done
