@@ -6,8 +6,8 @@
 
 ## ---------- code / environment ----------
 REPO_DIR=$HOME/codes/USAI2026/Machine-Unlearning-USAI-CCA-2026
-CONDA_ENV=__SET_ME__                      # env ที่มี tensorflow + efficientnet + scikit-image (เช็ค: python -c "import efficientnet.tfkeras")
-                                          # usai10k-python3.9 ใช้ evaluate ได้ แต่ยังไม่รู้ว่ามี efficientnet ไหม; env เดิมของโปรเจกต์คือ AI
+CONDA_ENV=base                            # probe_envs.sh: base = READY tf 2.3.1 (มี efficientnet, skimage, keras, sklearn ครบ)
+                                          # ตัวเลือกอื่นที่ READY: bitnetenv2 (tf 2.6.0-rc0), conex (tf 2.2.0)
 
 ## ---------- output (โฟลเดอร์ใหม่ ไม่ทับผลเดิม) ----------
 SAVE_DIR=/media/tohn/HDD2/Model_unlearn_2026   # โฟลเดอร์ใหม่ (เปลี่ยนได้)
