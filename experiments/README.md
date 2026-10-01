@@ -21,6 +21,8 @@
 | `CNNs_unlearn/data_generator.py` | `SameDiff_generator` — pair เดิม label เดิม (`cls`) augmentation เดิม แต่ label 0 = **ภาพอื่น** แทนภาพ flip (ไม่มี flip เลย) |
 | `CNNs_unlearn/trainmodel.py` | `--task [flip, sameimg]` → `sameimg` เซฟใน `baseML_unlearn_sameimg/` |
 | `USAI_unlearn/train.py`, `train-Kfold.py` | `--seed` (ตั้ง seed python/numpy/tf + data generator) และ `--tag` (เซฟใน `{set}_{tag}/`) |
+| `experiments/config_m29.sh` | path / ค่าทั้งหมดของเครื่อง 29 (แก้ไฟล์นี้ไฟล์เดียว) |
+| `experiments/run_C2_pretrain.sh`, `run_downstream.sh` | script รันพร้อมเช็ค path + log |
 | `experiments/compute_budget.py` | คำนวณจำนวน epoch ที่ต้องเพิ่มให้ C1 |
 | `experiments/seed_stats.py` | mean ± SD + paired t-test ข้าม seeds |
 
@@ -53,96 +55,63 @@ planner ยังขอให้ยืนยันว่า flip ทำหลั
 
 ---
 
-## ตั้งค่าก่อนรัน (เครื่อง 29)
+## วิธีรันบนเครื่อง 29
+
+### 0. ดึงโค้ด + ตั้งค่า (ครั้งเดียว)
 
 ```bash
-cd Machine-Unlearning-USAI-CCA-2026
-conda activate AI
-SAVE=/media/tohn/HDD2/Model_unlearn
-DATA=/media/tohn/HDD/VISION_dataset
-MINI_CSV=/home/kannika/code/mini-ImageNet_MachineUnlearn.csv
-E_UN_R1=200        # unlearn R1 (Excel)
-E_UN_R2=115        # unlearn R2 unfreezeB4-B7 (Excel: 115/200 — ยืนยันก่อน)
-BS=8               # batch size downstream — ยืนยันก่อน
+cd ~/codes/USAI2026/Machine-Unlearning-USAI-CCA-2026
+git pull
+nano experiments/config_m29.sh      # ใส่ค่าทุกช่องที่เป็น __SET_ME__
 ```
 
----
+script เช็คค่าและ path ทุกตัวก่อนเทรน ถ้ายังไม่ได้ใส่หรือ path ไม่มีจริง จะหยุดทันทีพร้อมบอกว่าขาดอะไร
+log ทุก run อยู่ที่ `$SAVE_DIR/logs/`
 
-## [1] C2 — pre-train same-image vs different-image (1 รอบ)
-
-ใช้ค่าทุกอย่างเหมือน unlearn เดิม เปลี่ยนแค่ `--task sameimg`
+### 1. C2 pre-train (1 รอบ: R1 → R2 unfreezeB4-B7)
 
 ```bash
-cd CNNs_unlearn
-# R1 transfer
-python3 trainmodel.py --gpu 0 --network_name EffNetB5 --weight imagenet --set baseML_unlearn \
-    --data_path $MINI_CSV --save_dir $SAVE --name transfer --R 1 --epochs $E_UN_R1 --task sameimg
-# R2 unfreeze block4-block7 (variant เดียวกับโมเดล unlearned ใน paper)
-python3 trainmodel.py --gpu 0 --network_name EffNetB5 --weight imagenet --set baseML_unlearn \
-    --data_path $MINI_CSV --save_dir $SAVE --name unfreezeB4-B7 --R 2 --epochs $E_UN_R2 --task sameimg \
-    --checkpoint_dir $SAVE/EffNetB5Model/baseML_unlearn_sameimg/weight_imagenet/R1/transfer/models/modelEffNetB5_Unlearning_miniImageNet_sameimg_transfer-R1.h5
-cd ..
+nohup bash experiments/run_C2_pretrain.sh 0 > c2_pretrain.out 2>&1 &
 ```
 
-> เช็ค val accuracy ของ C2 — ถ้าใกล้ 100% เร็วมาก แปลว่าโจทย์ง่าย ควรรายงานไว้ใน paper ด้วย
+> เช็ค val accuracy ของ C2 — ถ้าใกล้ 100% เร็วมาก แปลว่าโจทย์ง่าย ควรรายงานใน paper
 
-## [2] C2 — downstream 3 seeds
+### 2. downstream (R1 → R2) — `run_downstream.sh <model> <seed> <gpu>`
+
+| model | seeds ที่ต้องรัน | หมายเหตุ |
+|---|---|---|
+| `original` | 2, 3 | seed 1 = ผลเดิม (ถ้า config เดิมตรงกัน) |
+| `unlearned` | 2, 3 | ต้องตั้ง `UNLEARN_B4B7_CKPT` |
+| `C1` | 1, 2, 3 | ต้องตั้ง `E_C1` (ดูข้อ 3) |
+| `C2` | 1, 2, 3 | ต้องรันข้อ 1 ให้เสร็จก่อน |
+
+ตัวอย่าง: 2 GPU รันคู่กัน
 
 ```bash
-cd USAI_unlearn
-C2_CKPT=$SAVE/EffNetB5Model/baseML_unlearn_sameimg/weight_imagenet/R2/unfreezeB4-B7/models/modelEffNetB5_Unlearning_miniImageNet_sameimg_unfreezeB4-B7-R2.h5
-for SEED in 1 2 3; do
-  # R1 transfer
-  python3 train.py --gpu 0 --network_name EffNetB5 --weight imagenet --set MLunlearn_USAI --tag C2_sameimg \
-      --data_path $DATA --save_dir $SAVE --data unbalanced --name transfer --R 1 --exp unfreezeB4-B7 \
-      --checkpoint_dir $C2_CKPT --batchsize $BS --seed $SEED
-  # R2 fine-tune Block5a_se_excite-Block7
-  R1_DIR=$SAVE/EffNetB5Model/MLunlearn_USAI_C2_sameimg/R1_unbalanced/transfer_exp_unfreezeB4-B7/seed$SEED/models
-  R1_NAME=modelEffNetB5_MLunlearn_USAI_transfer_exp_unfreezeB4-B7-R1_unbalanced_C2_sameimg_seed$SEED
-  python3 train.py --gpu 0 --lr 1e-5 --network_name EffNetB5 --weight imagenet --set MLunlearn_USAI --tag C2_sameimg \
-      --data_path $DATA --save_dir $SAVE --data unbalanced --name unfreezeBlock5a_se_excite --R 2 --exp unfreezeB4-B7 \
-      --checkpoint_dir $R1_DIR/$R1_NAME.weights.h5 --Modeljson_dir $R1_DIR/$R1_NAME.json --batchsize $BS --seed $SEED
-done
-cd ..
+nohup bash -c 'for s in 2 3; do bash experiments/run_downstream.sh original  $s 0; done' > original.out 2>&1 &
+nohup bash -c 'for s in 2 3; do bash experiments/run_downstream.sh unlearned $s 1; done' > unlearned.out 2>&1 &
 ```
 
-## [3] C1 — ordinary fine-tuning, compute-matched (3 seeds)
+ถ้า R1 เสร็จแล้วแต่ R2 ค้าง สั่งคำสั่งเดิมซ้ำได้ (R1 ที่เสร็จแล้วจะถูกข้าม)
 
-**ขั้นที่ 1: หาจำนวน epoch** — ใช้ TensorBoard log ของ run เดิม (path อยู่ใน Excel)
+### 3. หา `E_C1` สำหรับ C1
 
 ```bash
-python3 experiments/compute_budget.py --unlearn_epochs $E_UN_R1 $E_UN_R2 --n_usai_train <จำนวนแถวใน Traindf_fold4_8_v1.csv> \
+python3 experiments/compute_budget.py --unlearn_epochs 200 115 --n_usai_train <จำนวนแถวใน Traindf_fold4_8_v1.csv> \
     --tb_unlearn <Mylogs_tensor ของ unlearn R1> <Mylogs_tensor ของ unlearn R2 unfreezeB4-B7> \
     --tb_downstream <Mylogs_tensor ของ original R2>
-E_C1=<ค่า "C1 --epochs (R2)" ที่ได้>
 ```
 
-**ขั้นที่ 2: เทรน** — pipeline เดียวกับ original (ImageNet → R1 → R2) แต่ R2 ยาวขึ้นเป็น `$E_C1`
+ใส่ค่า "C1 --epochs (R2)" ลง `E_C1` ใน `config_m29.sh` (แนะนำค่าจากแบบ [B] GPU time)
 
-```bash
-cd USAI_unlearn
-for SEED in 1 2 3; do
-  python3 train.py --gpu 1 --network_name EffNetB5 --weight imagenet --set MLorigin_USAI --tag C1_computematched \
-      --data_path $DATA --save_dir $SAVE --data unbalanced --name transfer --R 1 --batchsize $BS --seed $SEED
-  R1_DIR=$SAVE/EffNetB5Model/MLorigin_USAI_C1_computematched/weight_imagenet/R1_unbalanced/transfer/seed$SEED/models
-  R1_NAME=modelEffNetB5_MLorigin_USAI_transfer-R1_unbalanced_C1_computematched_seed$SEED
-  python3 train.py --gpu 1 --lr 1e-5 --network_name EffNetB5 --weight imagenet --set MLorigin_USAI --tag C1_computematched \
-      --data_path $DATA --save_dir $SAVE --data unbalanced --name unfreezeBlock5a_se_excite --R 2 --epochs $E_C1 \
-      --checkpoint_dir $R1_DIR/$R1_NAME.weights.h5 --Modeljson_dir $R1_DIR/$R1_NAME.json --batchsize $BS --seed $SEED
-done
-cd ..
-```
+### ผลเซฟที่ไหน (`$SAVE_DIR/EffNetB5Model/...`)
 
-> checkpoint ถูกเซฟทุก 20 epoch ใน `on_epoch_end/` → ใช้ดูได้ว่า performance ตันหรือ overfit ที่ epoch ไหน
-> ถ้าเทรนค้าง ใช้ `--resume --epochendName on_epoch_end_resume` แบบเดิม (ใส่ `--tag` และ `--seed` เดิมด้วย)
-
-## [4] X2 — original และ unlearned seed 2, 3
-
-ใช้ `train.py` แบบ [3] แต่ **ไม่ใส่ `--tag`** และ R2 ใช้ `--epochs 200`
-- original: `--set MLorigin_USAI`
-- unlearned: `--set MLunlearn_USAI --exp unfreezeB4-B7 --checkpoint_dir <โมเดล unlearn R2 unfreezeB4-B7 เดิม>`
-
-เพิ่ม `--seed 2` / `--seed 3` → ผลเซฟใน sub-folder `seed2/`, `seed3/` ไม่ทับผลเดิม
+| model | R2 model folder |
+|---|---|
+| original | `MLorigin_USAI/weight_imagenet/R2_unbalanced/unfreezeBlock5a_se_excite/seedN/models/` |
+| unlearned | `MLunlearn_USAI/R2_unbalanced/unfreezeBlock5a_se_excite/exp_unfreezeB4-B7/seedN/models/` |
+| C1 | `MLorigin_USAI_C1_computematched/weight_imagenet/R2_unbalanced/unfreezeBlock5a_se_excite/seedN/models/` |
+| C2 | `MLunlearn_USAI_C2_sameimg/R2_unbalanced/unfreezeBlock5a_se_excite/exp_unfreezeB4-B7/seedN/models/` |
 
 ---
 
