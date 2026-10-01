@@ -19,37 +19,18 @@ GPU=${3:?gpu}
 require_vars SAVE_DIR BATCH_SIZE
 require_paths USAI_DATA_DIR
 
-R2_EPOCHS=$E_DS_R2
-case $MODEL in
-    original)  SET=MLorigin_USAI;  TAG="" ;;
-    C1)        SET=MLorigin_USAI;  TAG=C1_computematched; require_vars E_C1; R2_EPOCHS=$E_C1 ;;
-    unlearned) SET=MLunlearn_USAI; TAG="";         EXP=unfreezeB4-B7
-               require_vars UNLEARN_B4B7_CKPT; PRE_CKPT=$UNLEARN_B4B7_CKPT ;;
-    C2)        SET=MLunlearn_USAI; TAG=C2_sameimg; EXP=unfreezeB4-B7
-               PRE_CKPT=$SAVE_DIR/EffNetB5Model/baseML_unlearn_sameimg/weight_imagenet/R2/unfreezeB4-B7/models/modelEffNetB5_Unlearning_miniImageNet_sameimg_unfreezeB4-B7-R2.h5 ;;
-    *) die "model ต้องเป็น original | unlearned | C1 | C2" ;;
-esac
-[[ -n ${PRE_CKPT:-} ]] && require_paths PRE_CKPT
-
-## same naming rule as USAI_unlearn/train.py
-SET_DIR=$SET${TAG:+_$TAG}
-RUN_TAG=${TAG:+_$TAG}_seed$SEED
-if [[ $SET == MLorigin_USAI ]]; then
-    R1_DIR=$SAVE_DIR/EffNetB5Model/$SET_DIR/weight_imagenet/R1_unbalanced/transfer/seed$SEED/models
-    R1_NAME=modelEffNetB5_${SET}_transfer-R1_unbalanced$RUN_TAG
-    EXP_ARGS=()
-    PRE_ARGS=()
-else
-    R1_DIR=$SAVE_DIR/EffNetB5Model/$SET_DIR/R1_unbalanced/transfer_exp_$EXP/seed$SEED/models
-    R1_NAME=modelEffNetB5_${SET}_transfer_exp_$EXP-R1_unbalanced$RUN_TAG
-    EXP_ARGS=(--exp "$EXP")
-    PRE_ARGS=(--checkpoint_dir "$PRE_CKPT")
-fi
+[[ $MODEL == C1 ]] && require_vars E_C1
+[[ $MODEL == unlearned ]] && require_vars UNLEARN_B4B7_CKPT
+setup_model "$MODEL" "$SEED"
+[[ -n $PRE_CKPT ]] && require_paths PRE_CKPT
+EXP_ARGS=(); [[ -n $EXP ]] && EXP_ARGS=(--exp "$EXP")
+PRE_ARGS=(); [[ -n $PRE_CKPT ]] && PRE_ARGS=(--checkpoint_dir "$PRE_CKPT")
 TAG_ARGS=(); [[ -n $TAG ]] && TAG_ARGS=(--tag "$TAG")
 COMMON=(--gpu "$GPU" --network_name EffNetB5 --weight imagenet --set "$SET" ${TAG_ARGS[@]+"${TAG_ARGS[@]}"} ${EXP_ARGS[@]+"${EXP_ARGS[@]}"}
-        --data_path "$USAI_DATA_DIR" --save_dir "$SAVE_DIR" --data unbalanced --batchsize "$BATCH_SIZE" --seed "$SEED")
+        --data_path "$USAI_DATA_DIR" --save_dir "$SAVE_DIR" --data unbalanced --batchsize "$BATCH_SIZE" --seed "$SEED" --effnet_impl "$EFFNET_IMPL")
 
 activate_env
+check_env
 cd "$REPO_DIR/USAI_unlearn" || die "ไม่พบ $REPO_DIR/USAI_unlearn"
 
 ## ---- R1 transfer (FC) ----
@@ -60,9 +41,9 @@ else
         --name transfer --R 1 --epochs "$E_DS_R1" --lr "$LR_DS_R1"
 fi
 
-## ---- R2 fine-tune Block5a_se_excite-Block7 ----
+## ---- R2 fine-tune (DS_R2_NAME, paper: Block5a_se_excite-Block7) ----
 run_logged "${MODEL}_seed${SEED}_R2" python3 train.py "${COMMON[@]}" \
-    --name unfreezeBlock5a_se_excite --R 2 --epochs "$R2_EPOCHS" --lr "$LR_DS_R2" \
+    --name "$DS_R2_NAME" --R 2 --epochs "$R2_EPOCHS" --lr "$LR_DS_R2" \
     --checkpoint_dir "$R1_DIR/$R1_NAME.weights.h5" --Modeljson_dir "$R1_DIR/$R1_NAME.json"
 
 info "เสร็จ: $MODEL seed $SEED"

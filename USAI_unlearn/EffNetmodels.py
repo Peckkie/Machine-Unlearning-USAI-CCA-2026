@@ -9,6 +9,7 @@ from tensorflow.keras.models import Model, model_from_json
 from tensorflow.keras.models import Model, load_model
 from tensorflow.keras.layers import Input, GlobalAveragePooling2D, Dropout, Dense#, Conv2D, BatchNormalization
 from tensorflow.keras.applications import EfficientNetB5 as Net
+import efficientnet.tfkeras as efn  # same EfficientNet-B5 implementation as the unlearned model (also registers its custom objects)
 
 
 
@@ -85,17 +86,22 @@ def finetuneUSAI_B4(path_modelJson, path_modelweights):
     return input_shape, model
 
 
-def build_EffNetmodelB5(fine_tune, Numclasses, init_weight):
+def build_EffNetmodelB5(fine_tune, Numclasses, init_weight, effnet_impl='keras'):
     
     """
     :param fine_tune (bool): Whether to train the hidden layers or not.
     :Numclasses == 15 AB ==> SubClass New 
     :init_weight : imagetnet or random initial weights.
+    :effnet_impl : 'keras' = tf.keras.applications (has built-in Rescaling(1/255) + Normalization -> input is
+                   rescaled twice with data_loader rescale=1/255), 'efn' = efficientnet.tfkeras (same as unlearned model)
     """
     height = width = 456
     input_shape = (height, width, 3)
     # loading pretrained conv base model
-    conv_base = Net(weights=init_weight, include_top=False, input_shape=input_shape)
+    if effnet_impl == 'efn':
+        conv_base = efn.EfficientNetB5(weights=init_weight, include_top=False, input_shape=input_shape)
+    else:
+        conv_base = Net(weights=init_weight, include_top=False, input_shape=input_shape)
     # create new model with a new classification layer
     x = conv_base.output  
     global_average_layer = layers.GlobalAveragePooling2D(name = 'head_pooling')(x)

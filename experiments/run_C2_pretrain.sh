@@ -11,6 +11,7 @@ STAGE=${2:-all}
 require_vars SAVE_DIR MINI_CSV E_UN_R1 E_UN_R2
 require_paths MINI_CSV
 activate_env
+check_env
 cd "$REPO_DIR/CNNs_unlearn" || die "ไม่พบ $REPO_DIR/CNNs_unlearn"
 
 BASE=$SAVE_DIR/EffNetB5Model/baseML_unlearn_sameimg/weight_imagenet

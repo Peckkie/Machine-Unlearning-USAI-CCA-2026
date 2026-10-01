@@ -89,6 +89,7 @@ def main():
     my_parser.add_argument('--epochendName', type=str ,default="on_epoch_end")
     my_parser.add_argument('--FmodelsName', type=str ,default="models")
     my_parser.add_argument('--seed', type=int, default=None, help='X2 repeated runs: [1, 2, 3] ; default None = old behaviour (no seed, old output path)')
+    my_parser.add_argument('--effnet_impl', type=str, default='keras', choices=['keras', 'efn'], help='MLorigin_USAI EffNetB5 R1 only: efn = efficientnet.tfkeras (same as unlearned model); keras = tf.keras.applications (old default, double rescaling)')
     my_parser.add_argument('--tag', type=str, default="", help='Control runs: [C1_computematched, C2_sameimg] ; saved in {set}_{tag} folder')
     
     args = my_parser.parse_args()
@@ -109,7 +110,7 @@ def main():
     print("Num GPUs:", len(physical_devices))
     
     ## Create Model
-    input_shape, model = utils_createModel(network_name=args.network_name, sets=args.set, weight=args.weight, resume=args.resume, R=args.R, name=args.name, exp=args.exp, checkpoint_dir=args.checkpoint_dir, Modeljson_dir=args.Modeljson_dir, imgsize=args.imgsize)       
+    input_shape, model = utils_createModel(network_name=args.network_name, sets=args.set, weight=args.weight, resume=args.resume, R=args.R, name=args.name, exp=args.exp, checkpoint_dir=args.checkpoint_dir, Modeljson_dir=args.Modeljson_dir, imgsize=args.imgsize, effnet_impl=args.effnet_impl)       
     ## get images size 
     IMAGE_SIZE = input_shape[0]
     model.summary()

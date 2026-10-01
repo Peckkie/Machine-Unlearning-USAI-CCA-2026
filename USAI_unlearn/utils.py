@@ -41,7 +41,7 @@ def colorstr(*input):
 
 
 
-def utils_createModel(network_name, sets, R, name, exp, weight, resume=False, checkpoint_dir=None, Modeljson_dir=None, imgsize=None):
+def utils_createModel(network_name, sets, R, name, exp, weight, resume=False, checkpoint_dir=None, Modeljson_dir=None, imgsize=None, effnet_impl='keras'):
     # set up weight
     if weight == 'random':
         init_weight = None
@@ -72,8 +72,8 @@ def utils_createModel(network_name, sets, R, name, exp, weight, resume=False, ch
             if resume :
                 input_shape, model = loadresumemodel(checkpoint_dir)
             elif R == 1 and name == "transfer" :
-                print(colorstr('blue', f'[INFO]: Build EffNetB5 Base Model with {weight} weight to Transfer Learning Stage'))
-                input_shape, model = build_EffNetmodelB5(fine_tune=True, Numclasses=15, init_weight=init_weight)
+                print(colorstr('blue', f'[INFO]: Build EffNetB5 Base Model ({effnet_impl}) with {weight} weight to Transfer Learning Stage'))
+                input_shape, model = build_EffNetmodelB5(fine_tune=True, Numclasses=15, init_weight=init_weight, effnet_impl=effnet_impl)
             elif R == 2 and name == "unfreezeBlock5a_se_excite" :
                 print(colorstr('blue', f"[INFO]: Load EffNetB5 {weight} Weight Model to Finetune Stage: Unfreeze Block5a_se_excite Layer"))
                 input_shape, model = model_block5Unfreze(Modeljson_dir, checkpoint_dir)
