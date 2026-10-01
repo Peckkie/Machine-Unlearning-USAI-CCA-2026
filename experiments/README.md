@@ -143,7 +143,7 @@ for s in 2 3; do bash experiments/run_eval.sh unlearned $s 0; done
 ### 5. หา `E_C1` สำหรับ C1
 
 ```bash
-python3 experiments/compute_budget.py --unlearn_epochs 200 50 --n_usai_train <จำนวนแถวใน Traindf_fold4_8_v1.csv> \
+python3 experiments/compute_budget.py --unlearn_epochs 200 50 --n_usai_train 4601 \
     --tb_unlearn $TB_UNLEARN_R1 $TB_UNLEARN_R2 \
     --tb_downstream <Mylogs_tensor ของ original R2 seed 1 ที่เพิ่งเทรน>
 ```
