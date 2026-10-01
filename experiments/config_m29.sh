@@ -38,9 +38,10 @@ TB_UNLEARN_R1=/media/tohn/HDD2/mini-ImageNet/EffNetB5Model_unlearn/R1/Mylogs_ten
 TB_UNLEARN_R2=/media/tohn/HDD2/mini-ImageNet/EffNetB5Model_unlearn/R2/unfreezeB4-B7/Mylogs_tensor
 
 ## ---------- training settings (ต้องเท่ากับผลเดิม) ----------
+# E_DS_R1 / E_DS_R2 override ได้ตอนสั่ง เช่น smoke test: E_DS_R1=2 E_DS_R2=3 bash experiments/run_downstream.sh original 99 1
 BATCH_SIZE=8                              # downstream: train.py default (README เดิมไม่เคยใส่ --batchsize)
-E_DS_R1=200                               # downstream R1 (FC) epochs
-E_DS_R2=200                               # downstream R2 (Block5a_se_excite-Block7) epochs
+E_DS_R1=${E_DS_R1:-200}                               # downstream R1 (FC) epochs
+E_DS_R2=${E_DS_R2:-200}                               # downstream R2 (Block5a_se_excite-Block7) epochs
 LR_DS_R1=2e-5
 LR_DS_R2=1e-5
 DS_R2_NAME=unfreezeBlock5a_se_excite      # downstream R2 = Block5a_se_excite-Block7 (ตรงกับโมเดลใน paper)
