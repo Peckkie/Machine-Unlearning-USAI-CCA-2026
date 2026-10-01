@@ -1,4 +1,4 @@
-# Machine Unlearning USAI CCA 2025
+# Machine Unlearning USAI CCA 2026
 
 ## 📂 Dataset - USAI15AB 8-fold Validation
 
@@ -36,7 +36,7 @@
 
 ```
 # Train R1
-cd Machine-Unlearning-USAI-CCA-2025/USAI_unlearn
+cd Machine-Unlearning-USAI-CCA-2026/USAI_unlearn
 conda activate AI
 python3 train-Kfold.py --gpu 0 --network_name EffNetB5 --weight imagenet --set MLunlearn_USAI --data unbalanced --name transfer --R 1 --exp unfreezeBlock5a_se_excite --checkpoint_dir /media/tohn/HDD2/Model_unlearn/ModelsR2_MiniImageNet/modelEffNetB5_Unlearning_unfreezeB5a_se_excite_R2.h5 --fold 4
 
@@ -55,7 +55,7 @@ python3 train-Kfold.py --gpu 0 --network_name EffNetB5 --weight imagenet --set M
       
 ```
 # Train R2
-cd Machine-Unlearning-USAI-CCA-2025/USAI_unlearn
+cd Machine-Unlearning-USAI-CCA-2026/USAI_unlearn
 conda activate AI
 python3 train-Kfold.py --gpu 0 --lr 1e-5 --network_name EffNetB5 --weight imagenet --set MLunlearn_USAI --data unbalanced --name unfreezeBlock5a_se_excite --R 2 --exp unfreezeBlock5a_se_excite --checkpoint_dir /media/tohn/HDD2/Model_unlearn/EffNetB5Model/MLunlearn_USAI/run_Kfold/R1_unbalanced/transfer_exp_unfreezeBlock5a_se_excite/fold4/models/modelEffNetB5_MLunlearn_USAI_transfer_exp_unfreezeBlock5a_se_excite-R1_unbalanced_fold4.weights.h5 --Modeljson_dir /media/tohn/HDD2/Model_unlearn/EffNetB5Model/MLunlearn_USAI/run_Kfold/R1_unbalanced/transfer_exp_unfreezeBlock5a_se_excite/fold4/models/modelEffNetB5_MLunlearn_USAI_transfer_exp_unfreezeBlock5a_se_excite-R1_unbalanced_fold4.json --fold 4
 
@@ -82,7 +82,7 @@ python3 train-Kfold.py --gpu 0 --lr 1e-5 --network_name EffNetB5 --weight imagen
 
 ```
 # Train R1
-cd Machine-Unlearning-USAI-CCA-2025/USAI_unlearn
+cd Machine-Unlearning-USAI-CCA-2026/USAI_unlearn
 conda activate tensorflow
 python3 train-Kfold.py --gpu 1 --R 1 --network_name ResNet152v2 --set MLunlearn_USAI --data unbalanced --name transfer --exp unfreeze_conv3_block-conv5_block --Modeljson_dir /media/HDD/mini-ImageNet/ResNet152v2Model/baseML_unlearn/R2/unfreeze_conv3_block-conv5_block/models/modelResNet152v2_Unlearning_miniImageNet-R2.json --checkpoint_dir /media/HDD/mini-ImageNet/ResNet152v2Model/baseML_unlearn/R2/unfreeze_conv3_block-conv5_block/models/modelResNet152v2_Unlearning_miniImageNet-R2.weights.h5 \
         --weight imagenet --data_path /media/HDD/VISION_dataset/CSV --save_dir /media/HDD/mini-ImageNet \
@@ -105,7 +105,7 @@ python3 train-Kfold.py --gpu 1 --R 1 --network_name ResNet152v2 --set MLunlearn_
       
 ```
 # Train R2
-cd Machine-Unlearning-USAI-CCA-2025/USAI_unlearn
+cd Machine-Unlearning-USAI-CCA-2026/USAI_unlearn
 conda activate tensorflow
 python3 train-Kfold.py --gpu 1 --R 2 --network_name ResNet152v2 --set MLunlearn_USAI --data unbalanced --name unfreeze_conv3_block-conv5_block --exp unfreeze_conv3_block-conv5_block --Modeljson_dir /media/HDD/mini-ImageNet/ResNet152v2Model/MLunlearn_USAI/run_Kfold/R1_unbalanced/transfer_exp_unfreeze_conv3_block-conv5_block/fold5/models/modelResNet152v2_MLunlearn_USAI_transfer_exp_unfreeze_conv3_block-conv5_block-R1_unbalanced_fold5_last.json --checkpoint_dir /media/HDD/mini-ImageNet/ResNet152v2Model/MLunlearn_USAI/run_Kfold/R1_unbalanced/transfer_exp_unfreeze_conv3_block-conv5_block/fold5/on_epoch_end/modelResNet152v2_MLunlearn_USAI_transfer_exp_unfreeze_conv3_block-conv5_block-R1_unbalanced_fold5_last.weights.h5 \
         --weight imagenet --data_path /media/HDD/VISION_dataset/CSV --save_dir /media/HDD/mini-ImageNet \
@@ -130,7 +130,7 @@ python3 train-Kfold.py --gpu 1 --R 2 --network_name ResNet152v2 --set MLunlearn_
 
 ```
 # Train R1
-cd Machine-Unlearning-USAI-CCA-2025/USAI_unlearn
+cd Machine-Unlearning-USAI-CCA-2026/USAI_unlearn
 conda activate AI
 python3 train-Kfold.py --gpu 1 --R 1 --network_name ResNet152v2 --set MLunlearn_USAI --data unbalanced --name transfer --exp unfreeze_conv3_block-conv5_block --Modeljson_dir /media/tohn/HDD2/Model_unlearn/ResNet152v2Model/baseML_unlearn/R2/unfreeze_conv3_block-conv5_block/models/modelResNet152v2_Unlearning_miniImageNet-R2.json --checkpoint_dir /media/tohn/HDD2/Model_unlearn/ResNet152v2Model/baseML_unlearn/R2/unfreeze_conv3_block-conv5_block/models/modelResNet152v2_Unlearning_miniImageNet-R2.weights.h5 \
         --weight imagenet --imgsize 224 --fold 5
@@ -151,7 +151,7 @@ python3 train-Kfold.py --gpu 1 --R 1 --network_name ResNet152v2 --set MLunlearn_
       
 ```
 # Train R2
-cd Machine-Unlearning-USAI-CCA-2025/USAI_unlearn
+cd Machine-Unlearning-USAI-CCA-2026/USAI_unlearn
 conda activate AI
 python3 train-Kfold.py --gpu 1 --R 2 --network_name ResNet152v2 --set MLunlearn_USAI --data unbalanced --name unfreeze_conv3_block-conv5_block --exp unfreeze_conv3_block-conv5_block --Modeljson_dir /media/tohn/HDD2/Model_unlearn/ResNet152v2Model/MLunlearn_USAI/run_Kfold/R1_unbalanced/transfer_exp_unfreeze_conv3_block-conv5_block/fold5/models/modelResNet152v2_MLunlearn_USAI_transfer_exp_unfreeze_conv3_block-conv5_block-R1_unbalanced_fold5_last.json --checkpoint_dir /media/tohn/HDD2/Model_unlearn/ResNet152v2Model/MLunlearn_USAI/run_Kfold/R1_unbalanced/transfer_exp_unfreeze_conv3_block-conv5_block/fold5/on_epoch_end/modelResNet152v2_MLunlearn_USAI_transfer_exp_unfreeze_conv3_block-conv5_block-R1_unbalanced_fold5_last.weights.h5 \
         --weight imagenet --imgsize 224 --fold 5 --lr 1e-5
