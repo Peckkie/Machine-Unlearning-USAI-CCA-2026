@@ -1,6 +1,6 @@
 # Experiment Tracker — X1 / X2 (EfficientNet-B5)
 
-> อัปเดตล่าสุด: **2026-10-01 17:00** · เครื่อง 29 (`yupaporn@10.177.191.29`, RTX 2080 Ti ×2, env `AI` tf 2.6.2)
+> อัปเดตล่าสุด: **2026-10-02 10:45** · เครื่อง 29 (`yupaporn@10.177.191.29`, RTX 2080 Ti ×2, env `AI` tf 2.6.2)
 >
 > ดูสถานะจริงจาก log (อัตโนมัติ):
 > ```bash
@@ -25,7 +25,7 @@
 | ID | model | seed | GPU | screen | R1 | R2 | Lab acc | Field acc | เริ่ม | จบ | หมายเหตุ |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | U1 | unlearned | 1 | — | — | ✅ | ✅ | **0.886** | **0.849** | — | — | โมเดลใน paper (ตรง Table 3/4) |
-| O1 | original | 1 | 0 | `original` | 🟡 | ⬜ | | | 10-01 16:43 | | ep 1: val_acc 0.654 (ปกติของ R1) |
+| O1 | original | 1 | 0 | `original` | ✅ val 0.7195 | 🟡 ep 69/200 val 0.878 | | | 10-01 16:43 | | ~4 นาที/epoch |
 | O2 | original | 2 | 0 | `original` | ⬜ | ⬜ | | | | | ต่อจาก O1 อัตโนมัติ |
 | O3 | original | 3 | 0 | `original` | ⬜ | ⬜ | | | | | ต่อจาก O2 อัตโนมัติ |
 | U2 | unlearned | 2 | | | ⬜ | ⬜ | | | | | |
@@ -41,7 +41,7 @@
 
 | ID | งาน | GPU | screen | สถานะ | ผล |
 |---|---|---|---|---|---|
-| S1 | original seed 99: R1 2 ep → R2 3 ep — เช็คว่าแก้ bug backbone สำเร็จ (R2 val_acc ต้อง > 0.65) | 1 | `smoke` | 🟡 10-01 ~17:00 | |
+| S1 | original seed 99: R1 2 ep → R2 3 ep — เช็คว่าแก้ bug backbone สำเร็จ (R2 val_acc ต้อง > 0.65) | 1 | `smoke` | ✅ | R1 0.654 → R2 0.692 ✓ แก้สำเร็จ |
 
 ---
 
@@ -82,6 +82,7 @@ ssh yupaporn@10.177.191.29 'cd ~/codes/USAI2026/Machine-Unlearning-USAI-CCA-2026
 | 10-01 | env `AI` activate script ใช้ `$LD_LIBRARY_PATH` → พังภายใต้ `set -u` | แก้ `activate_env` ใน `_common.sh` |
 | 10-01 | ตรวจ `evaluate.py` กับโมเดลใน paper: lab 0.8864 / 0.826 / 0.710 / 0.755, field 0.8488 / 0.212 / 0.208 / 0.174 | ✅ ตรง Table 3/4 → วิธี evaluate ถูกต้อง |
 | 10-01 | C2 pre-train OOM ที่ bs 16 (2080 Ti 11 GB) — ต้นฉบับเทรนบน 3090 Ti 24 GB | ⏸️ D1 |
+| 10-02 | smoke test R2 val_acc 0.692 > 0.654; original seed 1 R2 ep 69 val 0.878 | ✅ ยืนยันแก้ bug backbone สำเร็จ |
 | 10-01 | downstream ใช้เวลา ~4–5 นาที/epoch, GPU util ~15% (คอขวดที่ data loading) | 1 seed ≈ 1.5 วัน |
 
 ---
