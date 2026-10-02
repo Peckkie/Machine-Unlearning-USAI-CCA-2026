@@ -26,6 +26,7 @@ setup_model "$MODEL" "$SEED"
 EXP_ARGS=(); [[ -n $EXP ]] && EXP_ARGS=(--exp "$EXP")
 PRE_ARGS=(); [[ -n $PRE_CKPT ]] && PRE_ARGS=(--checkpoint_dir "$PRE_CKPT")
 TAG_ARGS=(); [[ -n $TAG ]] && TAG_ARGS=(--tag "$TAG")
+[[ -n ${USAI_PATH_REPLACE:-} ]] && TAG_ARGS+=(--path_replace "$USAI_PATH_REPLACE")
 COMMON=(--gpu "$GPU" --network_name EffNetB5 --weight imagenet --set "$SET" ${TAG_ARGS[@]+"${TAG_ARGS[@]}"} ${EXP_ARGS[@]+"${EXP_ARGS[@]}"}
         --data_path "$USAI_DATA_DIR" --save_dir "$SAVE_DIR" --data unbalanced --batchsize "$BATCH_SIZE" --seed "$SEED" --effnet_impl "$EFFNET_IMPL")
 

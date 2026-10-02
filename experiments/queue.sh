@@ -23,7 +23,7 @@ gpu_busy() { [[ -n $(nvidia-smi -i "$GPU" --query-compute-apps=pid --format=csv,
 ready() {  # ready <job...> : 0 = can run now
     case $1 in
         downstream|eval)
-            source "$EXP/config_m29.sh"   # re-read: E_C1 may have been set meanwhile
+            source "$CONFIG_FILE"   # re-read: E_C1 may have been set meanwhile
             [[ $2 == C1 && "$E_C1" == *__SET_ME__* ]] && return 1
             [[ $2 == C2 && ! -f $C2_PRE_H5 ]] && return 1
             return 0 ;;

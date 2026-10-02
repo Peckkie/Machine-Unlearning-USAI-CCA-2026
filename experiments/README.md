@@ -171,3 +171,28 @@ python3 experiments/seed_stats.py --csv $SAVE_DIR/results_seeds.csv --ref unlear
 ได้ mean ± SD ทุกโมเดล และ paired t-test (unlearned vs อื่นๆ) จับคู่ตาม seed
 
 > n = 3 seeds → df = 2 ทดสอบมีกำลังต่ำ ควรรายงาน per-seed difference ด้วย (ทุก seed ไปทางเดียวกันหรือไม่)
+
+---
+
+## เครื่อง 28 (RTX 3090 Ti 24 GB) — ใช้รัน C2 pre-train ที่ batch 16 เท่าต้นฉบับ
+
+```bash
+# ครั้งแรกบนเครื่อง 28
+mkdir -p ~/codes/USAI2026 && cd ~/codes/USAI2026 && git clone https://github.com/Peckkie/Machine-Unlearning-USAI-CCA-2026.git
+cd Machine-Unlearning-USAI-CCA-2026
+echo 28 > experiments/.machine          # ทุก script จะใช้ experiments/config_m28.sh อัตโนมัติ
+bash experiments/probe_envs.sh          # หา conda env ที่ READY (เห็น GPU) -> ใส่ CONDA_ENV ใน config_m28.sh
+bash experiments/check_setup.sh         # ทุกบรรทัดควรเป็น [OK] (FIELD/PAPER_* ไม่ต้องใช้บนเครื่อง 28)
+
+# รัน C2 pre-train ใน screen (GPU ของ 3090 Ti — Excel เดิมใช้ GPU 1)
+screen -dmS c2_pretrain bash -c "bash experiments/run_C2_pretrain.sh 1; exec bash"
+```
+
+เมื่อเสร็จ copy โมเดล C2 ไปเครื่อง 29 แล้ว C2 downstream ในคิวของเครื่อง 29 จะเริ่มเอง:
+
+```bash
+# บนเครื่อง 28
+F=EffNetB5Model/baseML_unlearn_sameimg/weight_imagenet/R2/unfreezeB4-B7/models/modelEffNetB5_Unlearning_miniImageNet_sameimg_unfreezeB4-B7-R2.h5
+ssh yupaporn@10.177.191.29 "mkdir -p /media/tohn/HDD2/Model_unlearn_2026/$(dirname $F)"
+scp /media/HDD/Model_unlearn_2026/$F yupaporn@10.177.191.29:/media/tohn/HDD2/Model_unlearn_2026/$F
+```

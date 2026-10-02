@@ -89,6 +89,7 @@ def main():
     my_parser.add_argument('--epochendName', type=str ,default="on_epoch_end")
     my_parser.add_argument('--FmodelsName', type=str ,default="models")
     my_parser.add_argument('--seed', type=int, default=None, help='X2 repeated runs: [1, 2, 3] ; default None = old behaviour (no seed, old output path)')
+    my_parser.add_argument('--path_replace', type=str, default="", help='rewrite "Path Crop" prefix for another machine, "OLD=NEW"')
     my_parser.add_argument('--effnet_impl', type=str, default='keras', choices=['keras', 'efn'], help='MLorigin_USAI EffNetB5 R1 only: efn = efficientnet.tfkeras (same as unlearned model); keras = tf.keras.applications (old default, double rescaling)')
     my_parser.add_argument('--tag', type=str, default="", help='Control runs: [C1_computematched, C2_sameimg] ; saved in {set}_{tag} folder')
     
@@ -125,6 +126,11 @@ def main():
         dataframe = pd.read_csv(f'{args.data_path}/Traindf_fold4_8_v1.csv')
     ## validation set
     valframe = pd.read_csv(f'{args.data_path}/Valdf_fold3_v1.csv')
+    if args.path_replace:
+        old, new = args.path_replace.split('=', 1)
+        for d in (dataframe, valframe):
+            d['Path Crop'] = d['Path Crop'].str.replace(old, new, n=1, regex=False)
+        print(colorstr('yellow', f'[INFO]: Path Crop prefix {old} -> {new}'))
     ### Implement > ## Train and validation sets  
     train_generator, valid_generator = Data_generator(height=IMAGE_SIZE, width=IMAGE_SIZE, BATCH_SIZE=args.batchsize, 
                                                           dataframe=dataframe, valframe=valframe, seed=args.seed)

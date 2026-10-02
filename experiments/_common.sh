@@ -2,7 +2,11 @@
 # shared helpers for run_*.sh — load config, check paths, activate conda
 
 EXP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$EXP_DIR/config_m29.sh"
+# which machine: env MACHINE, or experiments/.machine (set once per machine: echo 28 > experiments/.machine), default 29
+MACHINE=${MACHINE:-$(cat "$EXP_DIR/.machine" 2>/dev/null || echo 29)}
+CONFIG_FILE="$EXP_DIR/config_m${MACHINE}.sh"
+[[ -f $CONFIG_FILE ]] || { echo "[ERROR] ไม่พบ $CONFIG_FILE" >&2; exit 1; }
+source "$CONFIG_FILE"
 
 die() { echo -e "\033[31m[ERROR] $*\033[0m" >&2; exit 1; }
 info() { echo -e "\033[32m[INFO] $*\033[0m"; }
@@ -10,7 +14,7 @@ info() { echo -e "\033[32m[INFO] $*\033[0m"; }
 # require_vars VAR1 VAR2 ... : must be set and not __SET_ME__
 require_vars() {
     for v in "$@"; do
-        [[ -z "${!v:-}" || "${!v}" == *__SET_ME__* ]] && die "ยังไม่ได้ตั้งค่า $v ใน experiments/config_m29.sh"
+        [[ -z "${!v:-}" || "${!v}" == *__SET_ME__* ]] && die "ยังไม่ได้ตั้งค่า $v ใน experiments/config_m${MACHINE}.sh"
     done
 }
 
