@@ -27,9 +27,15 @@ def tb_wall_time(logdir):
         raise FileNotFoundError(f'no train event file under {logdir}')
     seconds, epochs = 0.0, 0
     for f in files:  # several run_* folders when the run was resumed
-        ea = EventAccumulator(f, size_guidance={'scalars': 0})
+        ea = EventAccumulator(f, size_guidance={'scalars': 0, 'tensors': 0})
         ea.Reload()
-        ev = ea.Scalars('epoch_loss')
+        tags = ea.Tags()
+        if 'epoch_loss' in tags.get('scalars', []):
+            ev = ea.Scalars('epoch_loss')
+        elif 'epoch_loss' in tags.get('tensors', []):  # TF2 summary v2 stores scalars as tensors
+            ev = ea.Tensors('epoch_loss')
+        else:
+            continue  # e.g. profile-empty event file
         if len(ev) > 1:
             # first event is written at the end of epoch 1, so add one average epoch
             seconds += (ev[-1].wall_time - ev[0].wall_time) * len(ev) / (len(ev) - 1)
