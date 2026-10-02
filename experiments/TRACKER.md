@@ -28,8 +28,8 @@
 | O1 | original | 1 | 0 | `original` | ✅ val 0.7195 | 🟡 ep 69/200 val 0.878 | | | 10-01 16:43 | | ~4 นาที/epoch |
 | O2 | original | 2 | 0 | `original` | ⬜ | ⬜ | | | | | ต่อจาก O1 อัตโนมัติ |
 | O3 | original | 3 | 0 | `original` | ⬜ | ⬜ | | | | | ต่อจาก O2 อัตโนมัติ |
-| U2 | unlearned | 2 | — | — | ⏸️ ep 13 | ⬜ | | | 10-02 10:49 | 10-02 14:10 | หยุด: พัดลม GPU 1 (m29) เสีย |
-| U3 | unlearned | 3 | | | ⬜ | ⬜ | | | | | |
+| U2 | unlearned | 2 | **m28** GPU 0 | `unlearned` | 🟡 | ⬜ | | | 10-02 15:57 | | ย้ายจาก m29 GPU 1 (พัดลมเสีย) |
+| U3 | unlearned | 3 | **m28** GPU 0 | `unlearned` | ⬜ | ⬜ | | | | | ต่อจาก U2 อัตโนมัติ |
 | C1-1 | C1 compute-matched | 1 | | | ⬜ | ⬜ | | | | | ⏸️ รอ `E_C1` |
 | C1-2 | C1 compute-matched | 2 | | | ⬜ | ⬜ | | | | | ⏸️ |
 | C1-3 | C1 compute-matched | 3 | | | ⬜ | ⬜ | | | | | ⏸️ |
