@@ -45,7 +45,7 @@ E_DS_R2=${E_DS_R2:-200}                               # downstream R2 (Block5a_s
 LR_DS_R1=2e-5
 LR_DS_R2=1e-5
 DS_R2_NAME=unfreezeBlock5a_se_excite      # downstream R2 = Block5a_se_excite-Block7 (ตรงกับโมเดลใน paper)
-BATCH_SIZE_UN=16                          # unlearn stage: trainmodel.py default
+BATCH_SIZE_UN=4                           # 2080 Ti 11 GB: bs 16 และ 8 OOM (ทดสอบ 10-02) -> 4; ต้นฉบับ = 16 บน 3090 Ti -> แนะนำรัน C2 pre-train บนเครื่อง 28
 E_UN_R1=200                               # unlearn R1 epochs (Excel: 150+10+9+13+18)
 E_UN_R2=50                                # unlearn R2 unfreezeB4-B7: เทรน 115 แต่ใช้ checkpoint epoch 50 (Excel 'Model Epoch')
 LR_UN_R1=1e-5                             # Excel
