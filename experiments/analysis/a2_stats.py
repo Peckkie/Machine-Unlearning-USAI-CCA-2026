@@ -15,7 +15,13 @@ import os
 
 import numpy as np
 import pandas as pd
-from scipy.stats import beta, binomtest
+from scipy.stats import beta
+try:
+    from scipy.stats import binomtest
+    def binom_p(k, n): return binomtest(k, n, 0.5).pvalue
+except ImportError:  # scipy < 1.7
+    from scipy.stats import binom_test
+    def binom_p(k, n): return binom_test(k, n, 0.5)
 from sklearn.metrics import accuracy_score, balanced_accuracy_score, classification_report
 
 D = '/home/kannika/code'
@@ -88,7 +94,7 @@ def main():
         # exact McNemar on correctness
         co, cu = (po == y), (pu == y)
         b_, c_ = int((co & ~cu).sum()), int((~co & cu).sum())
-        p_mcn = binomtest(min(b_, c_), b_ + c_, 0.5).pvalue if b_ + c_ > 0 else 1.0
+        p_mcn = binom_p(min(b_, c_), b_ + c_) if b_ + c_ > 0 else 1.0
 
         row = dict(backbone=bb, testset=ts, n_images=len(m), n_cases=len(uniq),
                    mcnemar_orig_only_correct=b_, mcnemar_unl_only_correct=c_, mcnemar_p=p_mcn)
