@@ -15,9 +15,9 @@ SAVE_DIR=/media/HDD/Model_unlearn_2026    # (ยืนยัน) โฟลเด
 
 ## ---------- datasets ----------
 # USAI: README เดิมของเครื่อง 28 ใช้ /media/HDD/VISION_dataset/CSV  (ต้องมี Traindf_fold4_8_v1.csv + Valdf_fold3_v1.csv)
-USAI_DATA_DIR=/media/HDD/VISION_dataset/CSV      # (ยืนยัน)
+USAI_DATA_DIR=/media/HDD/Model_unlearn_2026/usai_csv   # copy จากเครื่อง 29 (10-02, md5 ตรง): Traindf_fold4_8_v1.csv 4,601 + Valdf_fold3_v1.csv 656 — ภาพมีครบหลังแปลง path
 # "Path Crop" ใน CSV เป็น path ของเครื่อง 29 (/media/tohn/HDD/VISION_dataset/USAI/...) -> แปลงเป็นของเครื่อง 28
-USAI_PATH_REPLACE="/media/tohn/HDD=/media/HDD"   # (ยืนยัน) check_setup.sh จะบอกว่าภาพมีจริงไหม
+USAI_PATH_REPLACE="/media/tohn/HDD=/media/HDD"   # ยืนยันแล้ว 10-02: ภาพ train/val มีครบ 100%
 # mini-ImageNet pair CSV เดิมของเครื่อง 28 (mini-ImageNet-Dataset.ipynb) — img_path = /media/HDD/mini-ImageNet/mini-imagenet/...
 MINI_CSV=/home/kannika/codes_AI/CSV/mini-ImageNet_MachineUnlearn.csv   # (ยืนยัน)
 MINI_PATH_REPLACE=""
