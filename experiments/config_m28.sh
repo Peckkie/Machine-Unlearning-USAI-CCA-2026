@@ -8,7 +8,7 @@
 
 ## ---------- code / environment ----------
 REPO_DIR=$HOME/codes/USAI2026/Machine-Unlearning-USAI-CCA-2026
-CONDA_ENV=__SET_ME__                      # หาด้วย: bash experiments/probe_envs.sh  (README เดิม: เครื่อง 28 ใช้ env "tensorflow")
+CONDA_ENV=/home/yupaporn/miniconda3/envs/unlearn26   # สร้าง 10-02 (~/setup_unlearn26.sh): tf 2.6.2 + efficientnet 1.0.0 = version เดียวกับ env AI ของเครื่อง 29
 
 ## ---------- output ----------
 SAVE_DIR=/media/HDD/Model_unlearn_2026    # (ยืนยัน) โฟลเดอร์ใหม่บน HDD ของเครื่อง 28
