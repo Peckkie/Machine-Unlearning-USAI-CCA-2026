@@ -155,7 +155,60 @@ identity-level cluster bootstrap 2,000 resamples ของ 30 identities · 8,33
 
 ## [7] A3: Flip-consistency score (กรรมการข้อ 1, 14, 15)
 
-> ⏳ กำลังรันบนเครื่อง 29 (screen `a3`, CPU), lab เสร็จประมาณ 17:40, field ประมาณ 18:30, จะเติมส่วนนี้เมื่อได้ผล
+### ผลที่ได้ (cosine similarity ระหว่าง feature ของภาพกับภาพที่ flip ซ้ายขวา; สูง = invariant ต่อ flip มาก)
+
+| Model | Lab (n = 1,312) | Field (n = 807) |
+|---|---|---|
+| EfficientNet-B5 backbone, ImageNet | 0.981 ± 0.008 | 0.984 ± 0.007 |
+| EfficientNet-B5 backbone, after unlearning (B4-B7) | 0.942 ± 0.028 | 0.972 ± 0.010 |
+| EfficientNet-B5 original (Table 3) | 0.925 ± 0.056 | 0.960 ± 0.025 |
+| EfficientNet-B5 unlearned (Table 3) | 0.904 ± 0.061 | 0.936 ± 0.033 |
+| ResNet-152V2 original (Table 3) | 0.728 ± 0.139 | 0.762 ± 0.093 |
+| ResNet-152V2 unlearned (Table 3) | 0.662 ± 0.222 | 0.710 ± 0.146 |
+
+| Comparison (unlearned − reference) | Lab Δ [case-level 95% CI] · % images lower · Wilcoxon p | Field Δ [95% CI] · % lower · p |
+|---|---|---|
+| Backbone: unlearned vs ImageNet | **−0.039 [−0.042, −0.037]** · 97% · 6 × 10⁻²¹⁴ | **−0.012 [−0.014, −0.011]** · 91% · 1 × 10⁻¹¹⁵ |
+| EfficientNet-B5 downstream | **−0.020 [−0.023, −0.017]** · 73% · 2 × 10⁻⁶⁵ | **−0.024 [−0.026, −0.022]** · 88% · 5 × 10⁻¹⁰² |
+| ResNet-152V2 downstream | **−0.067 [−0.078, −0.056]** · 59% · 2 × 10⁻²⁹ | **−0.052 [−0.067, −0.038]** · 61% · 3 × 10⁻¹⁹ |
+
+**สิ่งที่ต้องรู้ก่อนเขียน**
+1. ทิศทางตรงกันทุกคู่ ทั้ง lab และ field: หลัง unlearning ค่า cosine **ลดลง** (invariant ต่อ flip น้อยลง) และ CI ไม่คร่อม 0 → เป็นหลักฐานระดับ representation ที่กรรมการขอ
+2. **แต่ลดลงไม่มาก**: backbone ยังมี cosine 0.94 (จาก 0.98) → representation ยังเกือบ invariant ต่อ flip; สนับสนุนชื่อเรื่องใหม่ "Reducing inherited flip invariance" และต้องไม่อ้างว่า "removes"
+3. การเปรียบเทียบที่สะอาดที่สุดคือ **backbone ก่อน downstream** (ImageNet vs หลัง unlearn) เพราะยังไม่มีผลของ downstream fine-tuning มาปน
+4. Prediction agreement (argmax เดิม = argmax หลัง flip) **ไม่ใช้เป็นผลหลัก**: บน field test agreement เพิ่ม (EfficientNet-B5 0.84 → 0.91) เพราะโมเดลทาย Normal บ่อยขึ้น (ดู [5]) จึงตีความยาก ให้ใส่ใน supplementary เท่านั้น
+5. ยังไม่ได้วัด ViT-L/32 (ถ้ากรรมการถาม ทำเพิ่มได้ด้วยสคริปต์เดียวกัน)
+
+### [7.1] Section 4.4 ใหม่ (เพิ่มหลังย่อหน้า confusion matrix ของ 4.3, หน้า 16 ก่อน Section 5)
+
+**ใหม่ (เพิ่ม)**
+> **4.4 Representation-level evidence: flip consistency**
+>
+> Downstream accuracy shows that the unlearning stage helps, but not that it changes the property it targets. We therefore measured flip consistency directly: for each test image x we computed the cosine similarity between the penultimate (global-average-pooled) features of x and of its exact horizontal mirror, s(x) = cos(f(x), f(flip(x))); a value of 1 means the representation is perfectly invariant to the flip. We evaluated the EfficientNet-B5 backbone before and after the unlearning stage (both applied directly to ultrasound images, before any ultrasound training) and the fine-tuned original and unlearned models of Table 3, using forward passes only and the same preprocessing as in training. Differences were tested with a paired Wilcoxon signed-rank test, and 95% intervals of the mean paired difference were obtained with the case-level bootstrap of Section 4.2.
+>
+> Table C shows that the unlearning stage lowers flip consistency in every comparison and on both test sets. On the laboratory set the backbone similarity falls from 0.981 to 0.942 (mean paired difference −0.039, 95% CI −0.042 to −0.037; lower for 97% of images; Wilcoxon p < 10⁻¹⁰⁰), and the reduction persists after ultrasound fine-tuning for both EfficientNet-B5 (−0.020, −0.023 to −0.017) and ResNet-152V2 (−0.067, −0.078 to −0.056); the field set shows the same pattern. The effect is, however, partial: after unlearning the EfficientNet-B5 backbone still maps an image and its mirror to features with a cosine similarity of 0.94 on average. The auxiliary task therefore reduces, rather than eliminates, the flip invariance inherited from pre-training, which is how we describe the method throughout the paper.
+>
+> **Table C:** Flip consistency, mean ± SD of cos(f(x), f(flip(x))) over test images (higher = more flip-invariant), and the mean paired difference (unlearned minus reference) with case-level bootstrap 95% CI. All differences: Wilcoxon p < 10⁻¹⁸.
+>
+> | Model | Lab (n = 1,312) | Field (n = 807) |
+> |---|---|---|
+> | EfficientNet-B5 backbone, ImageNet weights | 0.981 ± 0.008 | 0.984 ± 0.007 |
+> | EfficientNet-B5 backbone, after unlearning | 0.942 ± 0.028 | 0.972 ± 0.010 |
+> | Δ backbone | −0.039 [−0.042, −0.037] | −0.012 [−0.014, −0.011] |
+> | EfficientNet-B5, original (Table 3) | 0.925 ± 0.056 | 0.960 ± 0.025 |
+> | EfficientNet-B5, unlearned (Table 3) | 0.904 ± 0.061 | 0.936 ± 0.033 |
+> | Δ EfficientNet-B5 | −0.020 [−0.023, −0.017] | −0.024 [−0.026, −0.022] |
+> | ResNet-152V2, original (Table 3) | 0.728 ± 0.139 | 0.762 ± 0.093 |
+> | ResNet-152V2, unlearned (Table 3) | 0.662 ± 0.222 | 0.710 ± 0.146 |
+> | Δ ResNet-152V2 | −0.067 [−0.078, −0.056] | −0.052 [−0.067, −0.038] |
+
+### [7.2] Section 4.3: ย่อหน้า manipulation check (หน้า 15 บรรทัดที่ประมาณ 1–3) เชื่อมกับ 4.4
+
+**เดิม**
+> This accuracy is a manipulation check: it verifies that each backbone acquired flip-sensitivity, but does not quantify how much downstream-relevant flip-bias was removed, and accordingly does not predict the magnitude of downstream gain.
+
+**ใหม่**
+> This accuracy is a manipulation check: it verifies that each backbone acquired flip-sensitivity, but does not quantify how much downstream-relevant flip invariance was reduced, and accordingly does not predict the magnitude of downstream gain; Section 4.4 measures that reduction directly on the ultrasound images.
 
 ---
 
@@ -185,5 +238,5 @@ identity-level cluster bootstrap 2,000 resamples ของ 30 identities · 8,33
 
 - [ ] ให้เลข Table A / B / (C ของ A3) ใหม่ และแก้ทุกจุดที่อ้าง "Table 5 / 6 / 7" ที่ถูกเลื่อน
 - [ ] ทำ Supplementary Table S[x] = per-class sensitivity / specificity (ไฟล์ `A2_per_class.csv`)
-- [ ] Section 4.4 [A3] ถูกอ้างใน [5.6], ต้องเพิ่มเมื่อได้ผล A3
+- [x] Section 4.4 [A3] เพิ่มแล้ว (ใน [7.1]) และอ้างจาก [5.6]
 - [ ] grep หา em-dash (`---`, U+2014) ให้เป็น 0
