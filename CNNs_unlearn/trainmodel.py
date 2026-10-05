@@ -119,7 +119,10 @@ def main():
         init_weight = 'imagenet'
     # Create Model
     if args.network_name == "EffNetB5":
-        if args.R == 1 and args.name == "transfer":
+        if args.resume:  # must be checked first, otherwise "--name transfer --R 1" rebuilds a fresh model
+            print(f"===================== [INFO]: Load EffNetB5 Unlearn Model to Resume Train R{args.R} Stage =====================")
+            input_shape, model = loadresumemodel(args.checkpoint_dir)
+        elif args.R == 1 and args.name == "transfer":
             print(f" ==================== [INFO]: Build EffNetB5 model with {args.weight} weight to unlearning Stage ====================")
             input_shape, model = build_modelB5_unlearn(fine_tune=True, init_weight=init_weight)
         elif args.resume and args.R == 1:
