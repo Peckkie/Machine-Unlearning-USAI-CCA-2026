@@ -46,7 +46,7 @@ E_UN_R1=200
 E_UN_R2=50
 LR_UN_R1=1e-5
 LR_UN_R2=1e-6
-E_C1=__SET_ME__
+E_C1=600                                  # C1 R2 epochs: cap 600 (ตัดสินใจ 10-06; sample-pass match = 2,483 ~7.6 วัน/seed); checkpoint ทุก 20 ep -> ดู val_acc vs epoch ได้
 
 ## ---------- logs / results ----------
 LOG_DIR=${SAVE_DIR}/logs

@@ -50,7 +50,7 @@ E_UN_R1=200                               # unlearn R1 epochs (Excel: 150+10+9+1
 E_UN_R2=50                                # unlearn R2 unfreezeB4-B7: เทรน 115 แต่ใช้ checkpoint epoch 50 (Excel 'Model Epoch')
 LR_UN_R1=1e-5                             # Excel
 LR_UN_R2=1e-6                             # Excel (ไม่ใช่ default 1e-5 ของ trainmodel.py)
-E_C1=__SET_ME__                           # C1 downstream R2 epochs = E_DS_R2 + extra (จาก compute_budget.py)
+E_C1=600                                  # C1 R2 epochs: cap 600 (ตัดสินใจ 10-06; sample-pass match = 2,483 ~7.6 วัน/seed); checkpoint ทุก 20 ep -> ดู val_acc vs epoch ได้
 
 ## ---------- logs / results ----------
 LOG_DIR=${SAVE_DIR}/logs
