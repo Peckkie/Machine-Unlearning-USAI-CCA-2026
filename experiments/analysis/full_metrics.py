@@ -11,7 +11,7 @@ Per model x seed x test set:
   Normal-vs-Abnormal sensitivity / specificity / PPV / NPV / F1 / ROC-AUC (score = 1 - p_Normal),
   case-level bootstrap 95% CI for the main metrics.
 Per class: precision, sensitivity, specificity, F1, ROC-AUC, support (mean +- SD over seeds).
-Comparisons vs original (same seed): delta with case-level bootstrap CI + exact McNemar; pooled over the
+Comparisons (model vs reference, same seed; vs original and unlearned vs C1/C2): delta with case-level bootstrap CI + exact McNemar; pooled over the
 seeds both models have (same resampled patients for every pair).
 
 usage (local, after copying predictions + test CSVs):
@@ -36,6 +36,8 @@ except ImportError:  # scipy < 1.7
     def binom_p(k, n): return binom_test(k, n, 0.5)
 
 MODEL_ORDER = ['original', 'unlearned', 'C1', 'C2']
+COMPARISONS = [('unlearned', 'original'), ('C1', 'original'), ('C2', 'original'),
+               ('unlearned', 'C1'), ('unlearned', 'C2')]  # (model, reference): delta = model - reference
 MODEL_NAME = {'original': 'Original (ImageNet init)', 'unlearned': 'Unlearned (proposed)',
               'C1': 'C1 compute-matched fine-tuning', 'C2': 'C2 same/different-image auxiliary'}
 B, RNG_SEED = 1000, 2026
@@ -162,40 +164,40 @@ def main():
                                       sensitivity=rc, specificity=tn / (tn + fp), f1=2 * pr * rc / (pr + rc) if pr + rc else 0.0,
                                       auc=auc))
 
-        # comparisons vs original
-        for model in MODEL_ORDER[1:]:
-            seeds = sorted(s for (mm, s) in R if mm == model and ('original', s) in R)
+        # comparisons: model seed k vs reference seed k
+        for model, ref in COMPARISONS:
+            seeds = sorted(s for (mm, s) in R if mm == model and (ref, s) in R)
             if not seeds:
                 continue
             for s in seeds:
-                (po, Po), (pu, Pu) = R[('original', s)], R[(model, s)]
+                (po, Po), (pu, Pu) = R[(ref, s)], R[(model, s)]
                 mo, mu = core_metrics(y, po, 1 - Po[:, NORMAL]), core_metrics(y, pu, 1 - Pu[:, NORMAL])
                 bd = [{mt: core_metrics(y[i], pu[i], 1 - Pu[i, NORMAL])[mt] - core_metrics(y[i], po[i], 1 - Po[i, NORMAL])[mt]
                        for mt in CMP_METRICS} for i in boots]
                 co, cu = po == y, pu == y
                 b_, c_ = int((co & ~cu).sum()), int((~co & cu).sum())
-                row = dict(testset=ts, comparison=f'{model} vs original', seed=s,
-                           mcnemar_only_original_correct=b_, mcnemar_only_model_correct=c_,
+                row = dict(testset=ts, comparison=f'{model} vs {ref}', seed=s,
+                           mcnemar_only_reference_correct=b_, mcnemar_only_model_correct=c_,
                            mcnemar_exact_p=binom_p(min(b_, c_), b_ + c_) if b_ + c_ else 1.0)
                 for mt in CMP_METRICS:
                     a = np.array([d[mt] for d in bd], float)
-                    row.update({f'{mt}_original': mo[mt], f'{mt}_model': mu[mt], f'{mt}_delta': mu[mt] - mo[mt],
+                    row.update({f'{mt}_reference': mo[mt], f'{mt}_model': mu[mt], f'{mt}_delta': mu[mt] - mo[mt],
                                 f'{mt}_delta_ci': '%+.3f to %+.3f' % (np.nanpercentile(a, 2.5), np.nanpercentile(a, 97.5))})
                 pairs.append(row)
             bd = []
             for i in boots:
                 ds = []
                 for s in seeds:
-                    (po, Po), (pu, Pu) = R[('original', s)], R[(model, s)]
+                    (po, Po), (pu, Pu) = R[(ref, s)], R[(model, s)]
                     a_, b2 = core_metrics(y[i], pu[i], 1 - Pu[i, NORMAL]), core_metrics(y[i], po[i], 1 - Po[i, NORMAL])
                     ds.append({mt: a_[mt] - b2[mt] for mt in CMP_METRICS})
                 bd.append({mt: np.mean([d[mt] for d in ds]) for mt in CMP_METRICS})
             for mt in CMP_METRICS:
-                o = [core_metrics(y, *(lambda t: (t[0], 1 - t[1][:, NORMAL]))(R[('original', s)]))[mt] for s in seeds]
+                o = [core_metrics(y, *(lambda t: (t[0], 1 - t[1][:, NORMAL]))(R[(ref, s)]))[mt] for s in seeds]
                 u = [core_metrics(y, *(lambda t: (t[0], 1 - t[1][:, NORMAL]))(R[(model, s)]))[mt] for s in seeds]
                 a = np.array([d[mt] for d in bd], float)
-                pooled.append(dict(testset=ts, comparison=f'{model} vs original', seeds=','.join(map(str, seeds)),
-                                   metric=mt, original_mean=np.mean(o), original_sd=np.std(o, ddof=1) if len(o) > 1 else np.nan,
+                pooled.append(dict(testset=ts, comparison=f'{model} vs {ref}', seeds=','.join(map(str, seeds)),
+                                   metric=mt, reference_mean=np.mean(o), reference_sd=np.std(o, ddof=1) if len(o) > 1 else np.nan,
                                    model_mean=np.mean(u), model_sd=np.std(u, ddof=1) if len(u) > 1 else np.nan,
                                    mean_delta=np.mean(u) - np.mean(o), ci_lo=np.nanpercentile(a, 2.5), ci_hi=np.nanpercentile(a, 97.5),
                                    seeds_model_better=f'{sum(ui > oi for oi, ui in zip(o, u))}/{len(seeds)}'))
@@ -247,7 +249,7 @@ def write_excel(args, summ, pr, pairs, pooled, pcs, pc, cms):
         'true class among the 2 / 3 highest softmax outputs',
         f'95% percentile CI from case-level (patient) cluster bootstrap, B = {B}, seed {RNG_SEED}',
         'exact Clopper-Pearson 95% CI of image-level accuracy',
-        'model seed k vs original seed k (same pipeline, same seed); delta = model - original, CI from case bootstrap',
+        'model seed k vs reference seed k (same pipeline, same seed), incl. unlearned vs C1/C2; delta = model - reference, CI from case bootstrap',
         'exact two-sided McNemar on per-image correctness (binomial test on discordant pairs)',
         'mean delta over seeds; bootstrap resamples the same patients for every seed pair',
         'face verification (30 identities): ROC-AUC, EER, TAR@FAR, identity-level bootstrap CI',
