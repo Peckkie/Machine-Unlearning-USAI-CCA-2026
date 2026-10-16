@@ -33,7 +33,11 @@ TESTSETS = {
 
 
 def load_model_any(args):
-    import efficientnet.tfkeras  # noqa: F401  registers swish / FixedDropout
+    for m in ('efficientnet.tfkeras', 'vit_keras.vit'):  # register custom layers (swish / FixedDropout, ViT layers)
+        try:
+            __import__(m)
+        except ImportError:
+            pass
     from tensorflow.keras.models import load_model, model_from_json
     if args.model_h5:
         return load_model(args.model_h5, compile=False)
@@ -77,14 +81,28 @@ def main():
     p.add_argument('--pred_dir', default='predictions')
     p.add_argument('--batch_size', type=int, default=16)
     p.add_argument('--gpu', default='0')
+    p.add_argument('--dump_paths', default=None,
+                   help='write <dir>/{lab,field}_paths.txt (test-set image order) and exit; for predict_probs.py')
+    p.add_argument('--probs_dir', default=None,
+                   help='use probabilities from <dir>/{model}_seed{seed}_{testset}.npy (predict_probs.py) instead of a model')
     args = p.parse_args()
-    if not args.model_h5 and not (args.model_json and args.model_weights):
-        p.error('give --model_h5, or --model_json + --model_weights')
+    if args.dump_paths:
+        os.makedirs(args.dump_paths, exist_ok=True)
+        for testset, csv in [('lab', args.lab_csv), ('field', args.field_csv)]:
+            if csv:
+                t = TESTSETS[testset]
+                df = t['keep'](pd.read_csv(csv)).reset_index(drop=True)
+                with open(f'{args.dump_paths}/{testset}_paths.txt', 'w') as f:
+                    f.write('\n'.join(df[t['path_col']].tolist()) + '\n')
+        return
+    if not args.probs_dir and not args.model_h5 and not (args.model_json and args.model_weights):
+        p.error('give --model_h5, or --model_json + --model_weights, or --probs_dir')
 
-    os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
-    os.environ['CUDA_VISIBLE_DEVICES'] = str(args.gpu)
-    model = load_model_any(args)
-    size = model.input_shape[1]
+    if not args.probs_dir:
+        os.environ['CUDA_DEVICE_ORDER'] = 'PCI_BUS_ID'
+        os.environ['CUDA_VISIBLE_DEVICES'] = str(args.gpu)
+        model = load_model_any(args)
+        size = model.input_shape[1]
     os.makedirs(args.pred_dir, exist_ok=True)
 
     for testset, csv in [('lab', args.lab_csv), ('field', args.field_csv)]:
@@ -93,7 +111,11 @@ def main():
         t = TESTSETS[testset]
         df = t['keep'](pd.read_csv(csv)).reset_index(drop=True)
         print(f'[{args.model} seed {args.seed}] {testset} test: {len(df)} images')
-        probs = predict(model, df[t['path_col']].tolist(), size, args.batch_size)
+        if args.probs_dir:
+            probs = np.load(f'{args.probs_dir}/{args.model}_seed{args.seed}_{testset}.npy')
+            assert len(probs) == len(df), f'{testset}: {len(probs)} probs vs {len(df)} images'
+        else:
+            probs = predict(model, df[t['path_col']].tolist(), size, args.batch_size)
         y_true = df[t['label_col']].values
         y_pred = np.array(CLASSES)[probs.argmax(1)]
 
