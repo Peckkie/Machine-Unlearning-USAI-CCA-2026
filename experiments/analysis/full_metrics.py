@@ -35,11 +35,30 @@ except ImportError:  # scipy < 1.7
     from scipy.stats import binom_test
     def binom_p(k, n): return binom_test(k, n, 0.5)
 
-MODEL_ORDER = ['original', 'unlearned', 'C1', 'C2']
+MODEL_ORDER = ['original', 'unlearned', 'C1', 'C2',
+               'legacy_effnet_original', 'legacy_effnet_unl_B4', 'legacy_effnet_unl_B1B4', 'legacy_effnet_unl_B5B7',
+               'legacy_resnet_original', 'legacy_resnet_unl_c3', 'legacy_resnet_unl_c3c5', 'legacy_resnet_unl_c1c3',
+               'legacy_vit_original', 'legacy_vit_unlearned']
 COMPARISONS = [('unlearned', 'original'), ('C1', 'original'), ('C2', 'original'),
-               ('unlearned', 'C1'), ('unlearned', 'C2')]  # (model, reference): delta = model - reference
+               ('unlearned', 'C1'), ('unlearned', 'C2'),  # (model, reference): delta = model - reference
+               # legacy single runs of the submitted paper (seed 1 = the paper model; unlearned seed 1 = paper B4-B7)
+               ('unlearned', 'legacy_effnet_original'), ('original', 'legacy_effnet_original'),
+               ('legacy_effnet_unl_B4', 'legacy_effnet_original'), ('legacy_effnet_unl_B1B4', 'legacy_effnet_original'),
+               ('legacy_effnet_unl_B5B7', 'legacy_effnet_original'),
+               ('legacy_resnet_unl_c3c5', 'legacy_resnet_original'), ('legacy_resnet_unl_c3', 'legacy_resnet_original'),
+               ('legacy_resnet_unl_c1c3', 'legacy_resnet_original'), ('legacy_vit_unlearned', 'legacy_vit_original')]
 MODEL_NAME = {'original': 'Original (ImageNet init)', 'unlearned': 'Unlearned (proposed)',
-              'C1': 'C1 compute-matched fine-tuning', 'C2': 'C2 same/different-image auxiliary'}
+              'C1': 'C1 compute-matched fine-tuning', 'C2': 'C2 same/different-image auxiliary',
+              'legacy_effnet_original': '[paper] EfficientNet-B5 original (legacy pipeline)',
+              'legacy_effnet_unl_B4': '[paper] EfficientNet-B5 unlearned, unfreeze block4',
+              'legacy_effnet_unl_B1B4': '[paper] EfficientNet-B5 unlearned, unfreeze block1-4',
+              'legacy_effnet_unl_B5B7': '[paper] EfficientNet-B5 unlearned, unfreeze block5-7',
+              'legacy_resnet_original': '[paper] ResNet-152V2 original',
+              'legacy_resnet_unl_c3': '[paper] ResNet-152V2 unlearned, unfreeze conv3',
+              'legacy_resnet_unl_c3c5': '[paper] ResNet-152V2 unlearned, unfreeze conv3-conv5',
+              'legacy_resnet_unl_c1c3': '[paper] ResNet-152V2 unlearned, unfreeze conv1-conv3',
+              'legacy_vit_original': '[paper] ViT-L/32 original',
+              'legacy_vit_unlearned': '[paper] ViT-L/32 unlearned'}
 B, RNG_SEED = 1000, 2026
 CI_METRICS = ['accuracy', 'balanced_accuracy', 'macro_f1', 'abn_sensitivity', 'abn_specificity', 'abn_auc']
 CMP_METRICS = ['accuracy', 'balanced_accuracy', 'macro_f1', 'macro_precision', 'macro_recall',
@@ -143,7 +162,7 @@ def main():
         idx_by_case = {c: np.where(cases == c)[0] for c in uniq}
         boots = [np.concatenate([idx_by_case[c] for c in rng.choice(uniq, len(uniq))]) for _ in range(B)]
 
-        for (model, seed), (p, P) in sorted(R.items(), key=lambda kv: (MODEL_ORDER.index(kv[0][0]), kv[0][1])):
+        for (model, seed), (p, P) in sorted(R.items(), key=lambda kv: (MODEL_ORDER.index(kv[0][0]) if kv[0][0] in MODEL_ORDER else 99, kv[0][1])):
             m = full_metrics(y, p, P, classes)
             bt = [core_metrics(y[i], p[i], 1 - P[i, NORMAL]) for i in boots]
             for mt in CI_METRICS:
@@ -211,7 +230,7 @@ def main():
     # summary: mean +- SD over seeds (string for the paper + numeric columns)
     summ = []
     for (ts, model), g in pr.groupby(['testset', 'model'], sort=False):
-        row = dict(testset=ts, model=MODEL_NAME[model], seeds_done=len(g))
+        row = dict(testset=ts, model=MODEL_NAME.get(model, model), seeds_done=len(g))
         for mt in num:
             v = g[mt].values
             row[mt] = f'{v.mean():.3f} ± {v.std(ddof=1):.3f}' if len(v) > 1 else f'{v.mean():.3f} (1 seed)'
@@ -235,11 +254,11 @@ def write_excel(args, summ, pr, pairs, pooled, pcs, pc, cms):
     readme = pd.DataFrame({'item': [
         'Source', 'Test sets', 'Seeds available', 'Macro P/R/F1', 'Macro F1 (present classes)', 'Balanced accuracy',
         'Abnormal (abn_*)', 'abn_auc', 'macro_auc_ovr', 'top2/top3', 'CI (case)', 'CI (CP)', 'Comparisons', 'McNemar',
-        'Pooled', 'A1', 'A3', 'A5'],
+        'Pooled', 'Legacy [paper] models', 'A1', 'A3', 'A5'],
         'description': [
         'per-image predictions from experiments/evaluate.py; re-run experiments/analysis/full_metrics.py when C1/C2 seeds finish',
         'lab = Testdf_fold1_2_v1 (1,312 images, 144 cases); field = UICCA Azure 51 cases (807 images, Sub_Class_15AB != None)',
-        '; '.join(f'{MODEL_NAME[k]}: seeds {v}' for k, v in sorted(status.items(), key=lambda kv: MODEL_ORDER.index(kv[0]))),
+        '; '.join(f'{MODEL_NAME.get(k, k)}: seeds {v}' for k, v in sorted(status.items(), key=lambda kv: MODEL_ORDER.index(kv[0]) if kv[0] in MODEL_ORDER else 99)),
         'sklearn classification_report macro avg, labels = classes in y_true U y_pred (same as Table 3/4 of the paper)',
         'macro F1 averaged only over classes that occur in the test set (classes predicted but absent are excluded)',
         'mean recall over classes present in the test set',
@@ -252,6 +271,8 @@ def write_excel(args, summ, pr, pairs, pooled, pcs, pc, cms):
         'model seed k vs reference seed k (same pipeline, same seed), incl. unlearned vs C1/C2; delta = model - reference, CI from case bootstrap',
         'exact two-sided McNemar on per-image correctness (binomial test on discordant pairs)',
         'mean delta over seeds; bootstrap resamples the same patients for every seed pair',
+        'single runs behind Table 4/5 of the submitted paper, re-evaluated with the same evaluate.py (seed 1); unlearned seed 1 '
+        'is the paper EfficientNet-B5 unlearned (block4-7) model; legacy_effnet_original was trained with an older pipeline',
         'face verification (30 identities): ROC-AUC, EER, TAR@FAR, identity-level bootstrap CI',
         'flip consistency cos(f(x), f(flip x)) on backbone / downstream features; Wilcoxon signed-rank',
         'GPU-hours from TensorBoard wall-clock (unlearning on RTX 3090 Ti, downstream on RTX 2080 Ti)']})
